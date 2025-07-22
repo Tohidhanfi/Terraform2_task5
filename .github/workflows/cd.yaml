@@ -39,9 +39,15 @@ jobs:
         working-directory: terraform2_task5/
 
       - name: Terraform Plan
-        run: terraform plan -var="image_tag=$IMAGE_TAG"
+        run: terraform plan -var="image_tag=$IMAGE_TAG" \
+             -var="app_keys=${{ secrets.APP_KEYS }}" \
+             -var="api_token_salt=${{ secrets.API_TOKEN_SALT }}" \
+             -var="admin_jwt_secret=${{ secrets.ADMIN_JWT_SECRET }}"
         working-directory: terraform2_task5/
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve -var="image_tag=$IMAGE_TAG"
+        run: terraform apply -auto-approve -var="image_tag=$IMAGE_TAG" \
+             -var="app_keys=${{ secrets.APP_KEYS }}" \
+             -var="api_token_salt=${{ secrets.API_TOKEN_SALT }}" \
+             -var="admin_jwt_secret=${{ secrets.ADMIN_JWT_SECRET }}"
         working-directory: terraform2_task5/
