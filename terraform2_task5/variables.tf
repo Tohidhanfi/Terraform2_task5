@@ -34,3 +34,27 @@ variable "image_tag" {
   description = "Docker image tag to deploy"
   type        = string
 }
+
+variable "app_keys" {
+  description = "Strapi APP_KEYS"
+  type        = string
+}
+
+variable "api_token_salt" {
+  description = "Strapi API_TOKEN_SALT"
+  type        = string
+}
+
+variable "admin_jwt_secret" {
+  description = "Strapi ADMIN_JWT_SECRET"
+  type        = string
+}
+
+variable "dockerhub_username" {
+  description = "Docker Hub username"
+  type        = string
+}
+variable "image_tag" {
+  description = "Docker image tag"
+  type        = string
+}
