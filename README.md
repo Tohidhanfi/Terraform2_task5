@@ -103,4 +103,4 @@ image_tag      = "latest" # This is set dynamically by the workflow
 - The image tag is automatically passed from the CI workflow to the CD workflow and then to Terraform.
 - Ensure your EC2 security group allows inbound traffic on ports 22 (SSH) and 1337 (Strapi).
 - For production, use strong, unique secrets and secure your database.
-- You can further automate verification by adding a `curl` step to the CD workflow to check the Strapi endpoint after deployment. # Terraform2_task5
+- You can further automate verification by adding a `curl` step to the CD workflow to check the Strapi endpoint after deployment.# Terraform2_task5
