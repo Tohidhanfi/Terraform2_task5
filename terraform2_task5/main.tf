@@ -2,7 +2,7 @@ provider "aws" {
   region = var.aws_region
 }
 
-resource "aws_security_group" "strapi_sg" {
+resource "aws_security_group" "strapi_sg_tohid" {
   name        = "strapi-app-sg"
   description = "Allow SSH and Strapi"
 
