@@ -20,6 +20,11 @@ variable "key_name" {
   type        = string
 }
 
+variable "image_tag" {
+  description = "Docker image tag"
+  type        = string
+}
+
 variable "app_keys" {
   description = "Strapi APP_KEYS"
   type        = string
