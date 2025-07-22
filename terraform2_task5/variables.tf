@@ -20,21 +20,6 @@ variable "key_name" {
   type        = string
 }
 
-variable "ecr_registry" {
-  description = "ECR Registry URL (e.g., 123456789012.dkr.ecr.us-east-1.amazonaws.com)"
-  type        = string
-}
-
-variable "ecr_repository" {
-  description = "ECR repository name"
-  type        = string
-}
-
-variable "image_tag" {
-  description = "Docker image tag to deploy"
-  type        = string
-}
-
 variable "app_keys" {
   description = "Strapi APP_KEYS"
   type        = string
