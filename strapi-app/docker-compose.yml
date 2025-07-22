@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_DB: strapi
+      POSTGRES_USER: strapi
+      POSTGRES_PASSWORD: strapi
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - strapi-net
+
+  strapi:
+    image: tohidazure/strapi-app:latest
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_CLIENT: postgres
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: strapi
+      DATABASE_USERNAME: strapi
+      DATABASE_PASSWORD: strapi
+      # Add your other secrets here
+      APP_KEYS: 468cnhT7DiBFuGxUXVh8tA==,0ijw28sTuKb2Xi2luHX6zQ==,TfN3QRc00kFU3Qtg320QNg==,hHRI+D6KWZ0g5PER1WanWw==
+      API_TOKEN_SALT: PmzN60QIfFJBz4tGtWWrDg==
+      ADMIN_JWT_SECRET: YBeqRecVoyQg7PJGSLv1hg==
+    ports:
+      - "1337:1337"
+    networks:
+      - strapi-net
+
+  nginx:
+    image: nginx:alpine
+    depends_on:
+      - strapi
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - strapi-net
+
+volumes:
+  pgdata:
+
+networks:
+  strapi-net:
+    driver: bridge 

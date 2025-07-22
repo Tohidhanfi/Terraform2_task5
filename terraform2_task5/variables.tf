@@ -1,0 +1,36 @@
+variable "aws_region" {
+  description = "AWS region for deployment"
+  type        = string
+  default     = "us-east-2"
+}
+
+variable "ami_id" {
+  description = "AMI ID for EC2 instance"
+  type        = string
+}
+
+variable "instance_type" {
+  description = "EC2 instance type"
+  type        = string
+  default     = "t2.micro"
+}
+
+variable "key_name" {
+  description = "EC2 Key Pair name for SSH access"
+  type        = string
+}
+
+variable "ecr_registry" {
+  description = "ECR Registry URL (e.g., 123456789012.dkr.ecr.us-east-1.amazonaws.com)"
+  type        = string
+}
+
+variable "ecr_repository" {
+  description = "ECR repository name"
+  type        = string
+}
+
+variable "image_tag" {
+  description = "Docker image tag to deploy"
+  type        = string
+}
