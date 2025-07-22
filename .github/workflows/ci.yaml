@@ -31,7 +31,7 @@ jobs:
           docker buildx build \
             --platform linux/amd64 \
             --push \
-            -t ${{ secrets.DOCKERHUB_USERNAME }}/strapi:${{ steps.vars.outputs.tag }} \
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/strapi:gh-${GITHUB_SHA::7} \
             ./strapi-app
 
       - name: Save image tag
