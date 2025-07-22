@@ -19,12 +19,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download image tag artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: docker-image-tag
-          path: ./artifacts
-
       - name: Set IMAGE_TAG env
         run: echo "IMAGE_TAG=gh-${{ github.event.workflow_run.head_sha }}" >> $GITHUB_ENV
 
