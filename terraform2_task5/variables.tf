@@ -54,7 +54,3 @@ variable "dockerhub_username" {
   description = "Docker Hub username"
   type        = string
 }
-variable "image_tag" {
-  description = "Docker image tag"
-  type        = string
-}
