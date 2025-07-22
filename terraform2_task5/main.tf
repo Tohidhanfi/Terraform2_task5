@@ -3,7 +3,7 @@ provider "aws" {
 }
 
 resource "aws_security_group" "strapi_sg_tohid" {
-  name        = "strapi-app-sg"
+  name        = "strapi_sg_tohid"
   description = "Allow SSH and Strapi"
 
   ingress {
