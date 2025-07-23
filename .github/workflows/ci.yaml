@@ -27,7 +27,7 @@ jobs:
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/strapi-app:latest ./Strapi-app
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/strapi-app:latest
 
-     - name: Save latest tag as artifact
+      - name: Save latest tag as artifact
         run: |
           echo "latest" > image-tag.txt
         shell: bash
