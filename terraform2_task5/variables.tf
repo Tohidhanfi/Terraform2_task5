@@ -28,4 +28,5 @@ variable "image_tag" {
 variable "dockerhub_username" {
   description = "DockerHub username for pulling images"
   type        = string
+  default     = tohidazure
 }
