@@ -24,7 +24,7 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/strapi-app:latest ./Strapi-app
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/strapi-app:latest ./strapi-app
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/strapi-app:latest
 
       - name: Save latest tag as artifact
