@@ -23,7 +23,7 @@ jobs:
       - name: Download artifact
         uses: dawidd6/action-download-artifact@v3  
         with:
-          workflow: ci.yml
+          workflow: ci.yaml
           name: image-tag
           path: .
           github_token: ${{ secrets.GITHUB_TOKEN }}
