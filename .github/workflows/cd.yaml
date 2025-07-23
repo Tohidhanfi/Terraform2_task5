@@ -55,4 +55,3 @@ jobs:
             -var="key_name=strapi-tohid" \
             -var="aws_region=us-east-2" \
             -var="instance_type=t2.micro" \
-            -var="dockerhub_username=tohidazure"
