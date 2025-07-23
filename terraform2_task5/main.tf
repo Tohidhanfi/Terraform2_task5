@@ -33,7 +33,6 @@ resource "aws_instance" "strapi_ec2_tohid" {
   instance_type               = var.instance_type
   key_name                    = var.key_name
   vpc_security_group_ids      = [aws_security_group.strapi_sg.id]
-  associate_public_ip_address = true
 
   user_data = <<-EOF
               #!/bin/bash
@@ -54,8 +53,6 @@ resource "aws_instance" "strapi_ec2_tohid" {
 
               docker pull ${var.dockerhub_username}/strapi:${var.image_tag}
 
-              docker rm -f strapi || true
-
               docker run -d --name strapi --network strapi-net \
                 -e DATABASE_CLIENT=postgres \
                 -e DATABASE_HOST=postgres \
@@ -63,9 +60,9 @@ resource "aws_instance" "strapi_ec2_tohid" {
                 -e DATABASE_NAME=strapi \
                 -e DATABASE_USERNAME=strapi \
                 -e DATABASE_PASSWORD=strapi \
-                -e APP_KEYS='${var.app_keys}' \
-                -e API_TOKEN_SALT='${var.api_token_salt}' \
-                -e ADMIN_JWT_SECRET='${var.admin_jwt_secret}' \
+                -e APP_KEYS=468cnhT7DiBFuGxUXVh8tA==,0ijw28sTuKb2Xi2luHX6zQ==,TfN3QRc00kFU3Qtg320QNg==,hHRI+D6KWZ0g5PER1WanWw== \
+                -e API_TOKEN_SALT=PmzN60QIfFJBz4tGtWWrDg== \
+                -e ADMIN_JWT_SECRET=YBeqRecVoyQg7PJGSLv1hg== \
                 -p 1337:1337 \
                 ${var.dockerhub_username}/strapi:${var.image_tag}
   EOF
