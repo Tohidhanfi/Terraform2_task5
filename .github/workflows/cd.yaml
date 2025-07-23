@@ -1,31 +1,36 @@
+# .github/workflows/cd.yml
 name: CD - Deploy with Terraform
 
 on:
   workflow_run:
-    workflows: ["CI pipeline - Build & Push Docker Image"]  # Use the exact name from your CI workflow's 'name:' field
+    workflows: ["CI pipeline - Build & Push Docker Image"]  
     types:
       - completed
 
+permissions:
+  actions: read
+  contents: read
+  
 jobs:
   deploy:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-    environment: production
-    permissions:
-      contents: read
-      id-token: write
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set IMAGE_TAG env
-        run: echo "IMAGE_TAG=gh-${{ github.event.workflow_run.head_sha }}" >> $GITHUB_ENV
-
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v3
+       - name: Download artifact
+        uses: dawidd6/action-download-artifact@v3  
         with:
-          terraform_version: 1.5.7
+          workflow: ci.yml
+          name: image-tag
+          path: .
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read image tag
+        id: image_tag
+        run: echo "tag=latest" >> $GITHUB_OUTPUT
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
@@ -34,22 +39,22 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+      
       - name: Terraform Init
         run: terraform init
         working-directory: terraform2_task5/
 
-      - name: Terraform Plan
-        run: |
-          terraform -chdir=terraform2_task5 plan \
-            -var="image_tag=$IMAGE_TAG" \
-            -var="app_keys=${{ secrets.APP_KEYS }}" \
-            -var="api_token_salt=${{ secrets.API_TOKEN_SALT }}" \
-            -var="admin_jwt_secret=${{ secrets.ADMIN_JWT_SECRET }}"
-
       - name: Terraform Apply
+        working-directory: terraform2_task5/
         run: |
-          terraform -chdir=terraform2_task5 apply -auto-approve \
-            -var="image_tag=$IMAGE_TAG" \
-            -var="app_keys=${{ secrets.APP_KEYS }}" \
-            -var="api_token_salt=${{ secrets.API_TOKEN_SALT }}" \
-            -var="admin_jwt_secret=${{ secrets.ADMIN_JWT_SECRET }}"
+          terraform apply -auto-approve \
+            -var="image_tag=latest" \
+            -var="ami_id=ami-0d1b5a8c13042c939" \
+            -var="key_name=strapi-tohid" \
+            -var="aws_region=us-east-2" \
+            -var="instance_type=t2.micro" \
+            
+            
+            
