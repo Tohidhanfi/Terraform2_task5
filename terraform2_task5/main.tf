@@ -51,7 +51,7 @@ resource "aws_instance" "strapi_ec2_tohid" {
                 -v /srv/pgdata:/var/lib/postgresql/data \
                 postgres:15
 
-              docker pull ${var.dockerhub_username}/strapi:${var.image_tag}
+              docker pull tohidazure/strapi:${var.image_tag}
 
               docker run -d --name strapi --network strapi-net \
                 -e DATABASE_CLIENT=postgres \
@@ -64,7 +64,7 @@ resource "aws_instance" "strapi_ec2_tohid" {
                 -e API_TOKEN_SALT=PmzN60QIfFJBz4tGtWWrDg== \
                 -e ADMIN_JWT_SECRET=YBeqRecVoyQg7PJGSLv1hg== \
                 -p 1337:1337 \
-                ${var.dockerhub_username}/strapi:${var.image_tag}
+                tohidazure/strapi:${var.image_tag}
   EOF
 
   tags = {
