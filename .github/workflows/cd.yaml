@@ -20,7 +20,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-       - name: Download artifact
+      - name: Download artifact
         uses: dawidd6/action-download-artifact@v3  
         with:
           workflow: ci.yml
@@ -54,7 +54,4 @@ jobs:
             -var="ami_id=ami-0d1b5a8c13042c939" \
             -var="key_name=strapi-tohid" \
             -var="aws_region=us-east-2" \
-            -var="instance_type=t2.micro" \
-            
-            
-            
+            -var="instance_type=t2.micro"
