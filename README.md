@@ -316,58 +316,44 @@ image_tag      = "latest" # This is set dynamically by the workflow
 
 # TASK 6 – Strapi on AWS ECS Fargate (Serverless, Managed, Scalable)
 
-This task shows how to deploy Strapi on AWS using ECS Fargate, ECR, and an Application Load Balancer, all managed by Terraform. This is a fully managed, production-ready, and scalable approach—no EC2 instances to manage!
-
----
+This task shows how to deploy Strapi on AWS using ECS Fargate, ECR, and an Application Load Balancer, all managed by Terraform.
 
 ## Prerequisites
 - AWS account with permissions for ECR, ECS, VPC, ALB, and IAM
 - AWS CLI, Docker, and Terraform installed locally
 - Strapi Dockerfile ready (see `strapi-app/Dockerfile`)
 
----
-
 ## 1. Build & Push Docker Image to ECR
-1. **Provision ECR repository with Terraform:**
-   - Run `terraform apply` in `terraform3_task6/` to create the ECR repo.
-2. **Push your Docker image:**
-   - Follow `terraform3_task6/README_ECR_PUSH.md` for:
-     - Authenticating Docker to ECR
-     - Building the image
-     - Tagging and pushing to ECR
-
----
-
-## 2. Deploy Infrastructure with Terraform
-1. **Configure variables in `terraform3_task6/variables.tf` as needed**
-2. **Deploy:**
+1. Authenticate Docker to ECR:
    ```sh
-   cd terraform3_task6
-   terraform init
-   terraform apply
+   aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 607700977843.dkr.ecr.us-east-2.amazonaws.com
    ```
-   This will provision:
-   - VPC, public/private subnets, IGW, route tables
-   - ECS Cluster, Task Definition (using your ECR image)
-   - Fargate Service
-   - Security Groups for ALB and ECS tasks
-   - Application Load Balancer (ALB)
+2. Build and tag your image:
+   ```sh
+   docker build -t strapi-app-tohid ../strapi-app
+   docker tag strapi-app-tohid:latest 607700977843.dkr.ecr.us-east-2.amazonaws.com/strapi-app-tohid:latest
+   ```
+3. Push the image:
+   ```sh
+   docker push 607700977843.dkr.ecr.us-east-2.amazonaws.com/strapi-app-tohid:latest
+   ```
 
----
+## 2. Set the ECR Image URL in terraform.tfvars
+```hcl
+ecr_image_url = "607700977843.dkr.ecr.us-east-2.amazonaws.com/strapi-app-tohid:latest"
+```
 
-## 3. Access Strapi
-- After `terraform apply`, Terraform will output the ALB DNS name:
-  ```
-  alb_dns_name = <your-alb-dns>
-  ```
-- Visit `http://<your-alb-dns>` in your browser to access Strapi.
+## 3. Deploy Infrastructure with Terraform
+```sh
+cd terraform3_task6
+terraform init
+terraform apply
+```
+- This will provision all AWS resources and output the ALB DNS and RDS endpoint.
 
----
+## 4. Access Strapi
+- Open the ALB DNS name in your browser.
 
 ## Notes
-- The ECS service runs the Strapi container in private subnets, fronted by a public ALB.
-- You can customize the region and other settings in `variables.tf`.
-- For production, configure environment variables, secrets, and persistent storage as needed.
-- This method is fully managed and serverless (no EC2 instances to manage).
-
---- 
+- For production, restrict security groups and set RDS to not be publicly accessible.
+- Update environment variables and secrets as needed in your ECS task definition or `terraform.tfvars`. 
