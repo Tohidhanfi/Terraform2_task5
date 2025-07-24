@@ -3,7 +3,7 @@ name: CI pipeline - Build & Push Docker Image
 on:
   push:
     branches:
-      - main
+      - 
 
 jobs:
   docker:
