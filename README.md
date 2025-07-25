@@ -357,3 +357,97 @@ terraform apply
 ## Notes
 - For production, restrict security groups and set RDS to not be publicly accessible.
 - Update environment variables and secrets as needed in your ECS task definition or `terraform.tfvars`. 
+
+---
+
+# TASK 7 – Automated CI/CD Deployment to ECS Fargate with GitHub Actions
+
+This task automates the build, tagging, and deployment of your Strapi Docker image to AWS ECS Fargate using GitHub Actions (CI/CD). No manual Docker or ECR steps are needed after initial setup.
+
+## Prerequisites
+- AWS account with permissions for ECR, ECS, VPC, ALB, and IAM
+- AWS CLI, Docker, and Terraform installed locally (for initial setup)
+- Strapi Dockerfile ready (see `strapi-app/Dockerfile`)
+- ECR repository created by Terraform
+- GitHub repository with the following secrets configured:
+  - `AWS_ACCESS_KEY_ID`
+  - `AWS_SECRET_ACCESS_KEY`
+  - `AWS_REGION`
+  - `ECR_REGISTRY` (e.g., `607700977843.dkr.ecr.us-east-2.amazonaws.com`)
+  - `ECR_REPOSITORY` (e.g., `strapi-app-tohid`)
+
+## 1. Initial Setup (One Time, Locally)
+- Run `terraform apply` in `terraform4_task7/` to provision AWS resources (including ECR repo, ECS, RDS, ALB, etc.).
+
+## 2. CI/CD Workflow (Automated)
+- On every push to `main` (or on demand), GitHub Actions will:
+  1. **Build the Docker image** from your Strapi app.
+  2. **Tag the image** (e.g., with the commit SHA).
+  3. **Push the image** to ECR.
+  4. **Update the ECS service** to use the new image by running `terraform apply` (or by updating the ECS task definition directly).
+
+## 3. Example GitHub Actions Workflow
+Create a file at `.github/workflows/task7-cicd.yaml`:
+
+```yaml
+name: Deploy Strapi to ECS Fargate
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: us-east-2
+      ECR_REPOSITORY: strapi-app-tohid
+      ECR_REGISTRY: 607700977843.dkr.ecr.us-east-2.amazonaws.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push Docker image
+        run: |
+          IMAGE_TAG=${{ github.sha }}
+          docker build -t $ECR_REPOSITORY:$IMAGE_TAG ./strapi-app
+          docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        env:
+          ECR_REGISTRY: ${{ env.ECR_REGISTRY }}
+          ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
+
+      - name: Set image URL output
+        id: image-url
+        run: echo "IMAGE_URL=$ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }}" >> $GITHUB_ENV
+
+      - name: Terraform Apply (update ECS to use new image)
+        run: |
+          cd terraform4_task7
+          terraform init
+          terraform apply -auto-approve -var="ecr_image_url=${{ env.IMAGE_URL }}"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ env.AWS_REGION }}
+```
+
+## 4. Access Strapi
+- After the workflow completes, open the ALB DNS name output by Terraform.
+
+## Notes
+- For production, restrict security groups and set RDS to not be publicly accessible.
+- Update environment variables and secrets as needed in your ECS task definition or `terraform.tfvars`.
+- You can trigger the workflow manually or on every push. 
