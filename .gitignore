@@ -1,0 +1,21 @@
+# Terraform state
+terraform.tfstate
+terraform.tfstate.*
+crash.log
+
+# Terraform plan files
+*.tfplan
+
+# Terraform variable overrides (optional, if you use them)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# .terraform directory (Terraform working dir and plugins)
+.terraform/
+
+# Sensitive variable files (optional)
+*.tfvars
+*.terraform.lock.hcl
+!terraform.tfvars  # (if you want to keep the main tfvars in git, remove this line if not)
