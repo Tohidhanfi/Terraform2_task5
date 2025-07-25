@@ -15,7 +15,7 @@ data "aws_subnets" "default" {
 
 # Security group for ECS service
 resource "aws_security_group" "tohid_ecr_sg" {
-  name        = "tohid-sg"
+  name        = "tohid1-sg"
   description = "Allow HTTP/Strapi traffic"
   vpc_id      = data.aws_vpc.default.id
 
@@ -102,8 +102,8 @@ resource "aws_cloudwatch_log_group" "tohid_strapi" {
   retention_in_days = 7
 }
 
-resource "aws_iam_role" "ecs_task_execution_role_tohid" {
-  name = "ecsTaskExecutionRole-tohid"
+resource "aws_iam_role" "ecs_task_execution_role_tohid1" {
+  name = "ecsTaskExecutionRole-tohid1"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -118,7 +118,7 @@ resource "aws_iam_role" "ecs_task_execution_role_tohid" {
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_execution_policy" {
-  role       = aws_iam_role.ecs_task_execution_role_tohid.name
+  role       = aws_iam_role.ecs_task_execution_role_tohid1.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
@@ -191,8 +191,4 @@ resource "aws_ecs_service" "tohid_service" {
   }
 
   depends_on = [aws_lb_listener.http]
-}
-
-resource "aws_ecr_repository" "strapi_app_tohid" {
-  name = "strapi-app-tohid"
 }
