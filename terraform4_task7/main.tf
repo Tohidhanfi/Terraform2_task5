@@ -189,7 +189,11 @@ resource "aws_ecs_service" "tohid_service" {
   force_new_deployment = true
 
   network_configuration {
-    subnets         = data.aws_subnets.default.ids
+    subnets         = [
+      "subnet-0c0bb5df2571165a9", # us-east-2a
+      "subnet-0cc2ddb32492bcc41", # us-east-2b
+      "subnet-0f768008c6324831f"  # us-east-2c
+    ]
     security_groups = [aws_security_group.tohid_ecr_sg.id]
     assign_public_ip = true
   }
