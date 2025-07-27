@@ -450,4 +450,4 @@ jobs:
 ## Notes
 - For production, restrict security groups and set RDS to not be publicly accessible.
 - Update environment variables and secrets as needed in your ECS task definition or `terraform.tfvars`.
-- You can trigger the workflow manually or on every push. 
+- You can trigger the workflow manually or on every push .
