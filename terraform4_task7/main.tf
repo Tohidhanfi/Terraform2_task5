@@ -1,9 +1,9 @@
 terraform {
   backend "s3" {
-    bucket         = "my-terraform-state-bucket"      # Your bucket name
-    key            = "terraform4_task7/terraform.tfstate" # Path in the bucket
+    bucket         = "strapi-tf-s3"
+    key            = "terraform4_task7/terraform.tfstate"
     region         = "us-east-2"
-    dynamodb_table = "terraform-lock"                 # Optional, for state locking
+    use_lockfile   = true
     encrypt        = true
   }
 }
@@ -138,8 +138,8 @@ resource "aws_ecs_task_definition" "tohid_task" {
   network_mode             = "awsvpc"
   cpu                      = "512"
   memory                   = "1024"
-  execution_role_arn       = aws_iam_role.ecs_task_execution_role_tohid.arn
-  task_role_arn            = aws_iam_role.ecs_task_execution_role_tohid.arn
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role_tohid1.arn
+  task_role_arn            = aws_iam_role.ecs_task_execution_role_tohid1.arn
 
   container_definitions = jsonencode([
     {
@@ -201,8 +201,4 @@ resource "aws_ecs_service" "tohid_service" {
   }
 
   depends_on = [aws_lb_listener.http]
-}
-
-resource "aws_ecr_repository" "strapi_app_tohid" {
-  name = "strapi-app-tohid"
 }
