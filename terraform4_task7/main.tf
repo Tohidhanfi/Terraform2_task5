@@ -1,3 +1,13 @@
+terraform {
+  backend "s3" {
+    bucket         = "my-terraform-state-bucket"      # Your bucket name
+    key            = "terraform4_task7/terraform.tfstate" # Path in the bucket
+    region         = "us-east-2"
+    dynamodb_table = "terraform-lock"                 # Optional, for state locking
+    encrypt        = true
+  }
+}
+
 provider "aws" {
   region = "us-east-2"
 }
@@ -191,4 +201,8 @@ resource "aws_ecs_service" "tohid_service" {
   }
 
   depends_on = [aws_lb_listener.http]
+}
+
+resource "aws_ecr_repository" "strapi_app_tohid" {
+  name = "strapi-app-tohid"
 }
