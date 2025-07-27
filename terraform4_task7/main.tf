@@ -181,7 +181,7 @@ resource "aws_ecs_task_definition" "tohid_task" {
 }
 
 resource "aws_ecs_service" "tohid_service" {
-  name            = "tohid-service"
+  name            = "tohid-service-v2"
   cluster         = aws_ecs_cluster.tohid_cluster.id
   task_definition = aws_ecs_task_definition.tohid_task.arn
   launch_type     = "FARGATE"
