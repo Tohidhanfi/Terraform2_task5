@@ -451,3 +451,191 @@ jobs:
 - For production, restrict security groups and set RDS to not be publicly accessible.
 - Update environment variables and secrets as needed in your ECS task definition or `terraform.tfvars`.
 - You can trigger the workflow manually or on every push.
+
+---
+
+# TASK 8 – Comprehensive CloudWatch Monitoring for Strapi ECS Application
+
+This task adds comprehensive monitoring and observability to your Strapi ECS Fargate deployment using AWS CloudWatch. It includes real-time dashboards, automated alarms, and detailed metrics collection for ECS, ALB, and RDS components.
+
+## Overview
+- **CloudWatch Dashboard**: Real-time monitoring with 6 comprehensive widgets
+- **Automated Alarms**: 8 different alarms for proactive issue detection
+- **Log Management**: Centralized logging with CloudWatch Log Groups
+- **Metrics Collection**: CPU, Memory, Network, Response Time, and Database metrics
+
+## Prerequisites
+- Completed Task 7 (ECS Fargate deployment)
+- AWS account with CloudWatch permissions
+- Terraform installed locally
+
+## 1. Infrastructure Components
+
+### CloudWatch Dashboard
+A comprehensive dashboard with 6 widgets monitoring:
+- **ECS CPU & Memory Utilization**
+- **ECS Task Count** (Running vs Pending)
+- **ECS Network Traffic** (In/Out bytes)
+- **ALB Response Time & Request Count**
+- **ALB HTTP Status Codes** (2XX, 4XX, 5XX)
+- **RDS Metrics** (CPU, Connections, Memory)
+
+### CloudWatch Alarms
+8 different alarms monitoring:
+
+#### ECS Alarms:
+- **High CPU Utilization** (>80% for 2 periods)
+- **High Memory Utilization** (>80% for 2 periods)
+- **Task Count** (<1 running task for 2 periods)
+
+#### ALB Alarms:
+- **Response Time** (>5 seconds for 2 periods)
+- **5XX Errors** (>10 errors for 2 periods)
+- **Application Health** (no healthy hosts for 3 periods)
+
+#### RDS Alarms:
+- **High CPU Utilization** (>80% for 2 periods)
+- **High Connection Count** (>80 connections for 2 periods)
+
+## 2. Deployment Steps
+
+### Step 1: Navigate to Task 8 Directory
+```sh
+cd terraform5_task8
+```
+
+### Step 2: Configure Variables
+Update `terraform.tfvars` with your ECR image URL:
+```hcl
+ecr_image_url = "607700977843.dkr.ecr.us-east-2.amazonaws.com/strapi-app-tohid:latest"
+```
+
+### Step 3: Deploy Infrastructure
+```sh
+terraform init
+terraform plan
+terraform apply
+```
+
+### Step 4: Access Monitoring
+After deployment, you can access:
+- **Strapi Application**: Use the ALB DNS name from outputs
+- **CloudWatch Dashboard**: Use the dashboard URL from outputs
+- **CloudWatch Logs**: Navigate to `/ecs/tohid-strapi` log group
+
+## 3. Monitoring Features
+
+### Real-time Dashboard
+- **Auto-refreshing metrics** every 5 minutes
+- **Multi-dimensional monitoring** (ECS, ALB, RDS)
+- **Visual performance indicators**
+- **Historical data tracking**
+
+### Proactive Alerting
+- **Threshold-based alarms** for critical metrics
+- **Multi-period evaluation** to reduce false positives
+- **Comprehensive coverage** of all infrastructure components
+
+### Log Management
+- **Centralized logging** from ECS tasks
+- **Structured log streams** with prefixes
+- **7-day retention** for cost optimization
+- **Real-time log viewing** in CloudWatch console
+
+## 4. Key Benefits
+
+### Performance Monitoring
+- **Detect performance bottlenecks** before they affect users
+- **Track resource utilization** for cost optimization
+- **Monitor application health** in real-time
+
+### Operational Excellence
+- **Proactive issue detection** with automated alarms
+- **Comprehensive visibility** across all components
+- **Historical trend analysis** for capacity planning
+
+### Cost Optimization
+- **Resource utilization tracking** to identify over/under-provisioned resources
+- **Performance-based scaling** decisions
+- **Efficient log retention** policies
+
+## 5. Customization Options
+
+### Alarm Thresholds
+You can modify alarm thresholds in `cloudwatch.tf`:
+```hcl
+threshold = "80"  # Change CPU/Memory threshold
+evaluation_periods = "2"  # Adjust sensitivity
+```
+
+### Dashboard Layout
+Customize dashboard widgets in `cloudwatch.tf`:
+```hcl
+width  = 12
+height = 6
+x      = 0
+y      = 0
+```
+
+### Log Retention
+Adjust log retention in `main.tf`:
+```hcl
+retention_in_days = 7  # Change retention period
+```
+
+## 6. Integration with CI/CD
+
+### Automated Monitoring Setup
+The CloudWatch monitoring is automatically deployed with your infrastructure, ensuring:
+- **Consistent monitoring** across all deployments
+- **No manual setup** required for new environments
+- **Version-controlled** monitoring configuration
+
+### Monitoring in CI/CD Pipeline
+Add monitoring verification to your GitHub Actions workflow:
+```yaml
+- name: Verify CloudWatch Dashboard
+  run: |
+    # Add verification steps for monitoring setup
+    echo "CloudWatch monitoring deployed successfully"
+```
+
+## 7. Troubleshooting
+
+### Common Issues
+1. **Alarms not triggering**: Check alarm thresholds and evaluation periods
+2. **Missing metrics**: Ensure ECS tasks are running and healthy
+3. **Dashboard not loading**: Verify CloudWatch permissions
+
+### Useful Commands
+```sh
+# Check CloudWatch alarms
+aws cloudwatch describe-alarms --alarm-names strapi-ecs-cpu-high
+
+# View log streams
+aws logs describe-log-streams --log-group-name /ecs/tohid-strapi
+
+# Get dashboard details
+aws cloudwatch get-dashboard --dashboard-name Strapi-ECS-Dashboard
+```
+
+## 8. Next Steps
+
+### Advanced Monitoring
+- **Custom metrics** for business KPIs
+- **SNS notifications** for alarm actions
+- **CloudWatch Insights** for advanced log analysis
+- **X-Ray tracing** for distributed tracing
+
+### Production Enhancements
+- **Multi-region monitoring** for global deployments
+- **Cross-account monitoring** for enterprise setups
+- **Automated scaling** based on CloudWatch metrics
+- **Cost anomaly detection** and alerting
+
+## Notes
+- All monitoring components are deployed as Infrastructure as Code
+- CloudWatch metrics are automatically collected by AWS
+- Alarms can be extended with SNS notifications for email/SMS alerts
+- Dashboard provides comprehensive visibility without additional setup
+- Monitoring costs are minimal for small to medium workloads
