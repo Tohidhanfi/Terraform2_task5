@@ -177,8 +177,8 @@ resource "aws_ecs_task_definition" "tohid_task" {
   network_mode             = "awsvpc"
   cpu                      = "512"
   memory                   = "1024"
-  execution_role_arn       = aws_iam_role.ecs_task_execution_role_tohid1.arn
-  task_role_arn            = aws_iam_role.ecs_task_execution_role_tohid1.arn
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role_tohid.arn
+  task_role_arn            = aws_iam_role.ecs_task_execution_role_tohid.arn
 
   container_definitions = jsonencode([
     {
