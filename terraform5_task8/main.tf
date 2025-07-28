@@ -151,8 +151,8 @@ resource "aws_cloudwatch_log_group" "tohid_strapi" {
   retention_in_days = 7
 }
 
-resource "aws_iam_role" "ecs_task_execution_role_tohid1" {
-  name = "ecsTaskExecutionRole-tohid1"
+resource "aws_iam_role" "ecs_task_execution_role_tohid" {
+  name = "ecsTaskExecutionRole-tohid"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -167,7 +167,7 @@ resource "aws_iam_role" "ecs_task_execution_role_tohid1" {
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_execution_policy" {
-  role       = aws_iam_role.ecs_task_execution_role_tohid1.name
+  role       = aws_iam_role.ecs_task_execution_role_tohid.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
