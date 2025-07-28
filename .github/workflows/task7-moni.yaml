@@ -1,4 +1,4 @@
-name: Deploy Strapi to ECS Fargate
+name: Deploy Strapi to monitor
 
 on:
   push:
