@@ -1,5 +1,5 @@
 resource "aws_db_subnet_group" "strapiapp_db_subnet_group" {
-  name       = "strapiapp-db-subnet-group"
+  name       = "strapiapp-task8-db-subnet-group"
   subnet_ids = data.aws_subnets.default.ids
 
   tags = {
@@ -22,6 +22,6 @@ resource "aws_db_instance" "tohid_rds" {
   publicly_accessible    = true
 
   tags = {
-    Name = "tohid RDS Instance"
+    Name = "tohid Task8 RDS Instance"
   }
 }

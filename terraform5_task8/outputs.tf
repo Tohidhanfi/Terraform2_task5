@@ -9,5 +9,5 @@ output "rds_endpoint" {
 
 output "cloudwatch_dashboard_url" {
   description = "CloudWatch Dashboard URL"
-  value       = "https://us-east-2.console.aws.amazon.com/cloudwatch/home?region=us-east-2#dashboards:name=Strapi-ECS-Dashboard"
+  value       = "https://us-east-2.console.aws.amazon.com/cloudwatch/home?region=us-east-2#dashboards:name=Strapi-Task8-ECS-Dashboard"
 }

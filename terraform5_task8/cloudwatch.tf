@@ -1,6 +1,6 @@
 # CloudWatch Dashboard for Strapi ECS Monitoring
 resource "aws_cloudwatch_dashboard" "strapi_dashboard" {
-  dashboard_name = "Strapi-ECS-Dashboard"
+  dashboard_name = "Strapi-Task8-ECS-Dashboard"
 
   dashboard_body = jsonencode({
     widgets = [

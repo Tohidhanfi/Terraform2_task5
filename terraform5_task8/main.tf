@@ -1,55 +1,18 @@
-# terraform {
-#   backend "s3" {
-#     bucket         = "strapi-tf-s3"
-#     key            = "terraform5_task8/terraform.tfstate"
-#     region         = "us-east-2"
-#     use_lockfile   = true
-#     encrypt        = true
-#   }
-# }
+terraform {
+  backend "s3" {
+    bucket         = "strapi-tf-s3"
+    key            = "terraform4_task7/terraform.tfstate"
+    region         = "us-east-2"
+    use_lockfile   = true
+    encrypt        = true
+  }
+}
 
 provider "aws" {
   region = "us-east-2"
 }
 
-# S3 bucket for Terraform state
-resource "aws_s3_bucket" "terraform_state" {
-  bucket = "strapi-tf-s3"
 
-  tags = {
-    Name        = "Terraform State Bucket"
-    Environment = "Production"
-  }
-}
-
-# Enable versioning for state files
-resource "aws_s3_bucket_versioning" "terraform_state" {
-  bucket = aws_s3_bucket.terraform_state.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
-# Enable server-side encryption
-resource "aws_s3_bucket_server_side_encryption_configuration" "terraform_state" {
-  bucket = aws_s3_bucket.terraform_state.id
-
-  rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
-    }
-  }
-}
-
-# Block public access
-resource "aws_s3_bucket_public_access_block" "terraform_state" {
-  bucket = aws_s3_bucket.terraform_state.id
-
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
 
 data "aws_vpc" "default" {
   default = true
@@ -64,7 +27,7 @@ data "aws_subnets" "default" {
 
 # Security group for ECS service
 resource "aws_security_group" "tohid_ecr_sg" {
-  name        = "tohid1-sg"
+  name        = "tohid-task8-sg"
   description = "Allow HTTP/Strapi traffic"
   vpc_id      = data.aws_vpc.default.id
 
@@ -98,7 +61,7 @@ resource "aws_security_group" "tohid_ecr_sg" {
 }
 
 resource "aws_lb" "tohid_alb" {
-  name               = "tohid"
+  name               = "tohid-task8"
   internal           = false
   load_balancer_type = "application"
   subnets = [
@@ -113,7 +76,7 @@ resource "aws_lb" "tohid_alb" {
 
 
 resource "aws_lb_target_group" "tohid_tg" {
-  name        = "tohid-tg"
+  name        = "tohid-task8-tg"
   port        = 1337
   protocol    = "HTTP"
   vpc_id      = data.aws_vpc.default.id
@@ -143,16 +106,16 @@ resource "aws_lb_listener" "http" {
 }
 
 resource "aws_ecs_cluster" "tohid_cluster" {
-  name = "tohid-cluster"
+  name = "tohid-task8-cluster"
 }
 
 resource "aws_cloudwatch_log_group" "tohid_strapi" {
-  name              = "/ecs/tohid-strapi"
+  name              = "/ecs/tohid-task8-strapi"
   retention_in_days = 7
 }
 
 resource "aws_iam_role" "ecs_task_execution_role_tohid" {
-  name = "ecsTaskExecutionRole-tohid"
+  name = "ecsTaskExecutionRole-tohid-task8"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -172,7 +135,7 @@ resource "aws_iam_role_policy_attachment" "ecs_execution_policy" {
 }
 
 resource "aws_ecs_task_definition" "tohid_task" {
-  family                   = "tohid-task"
+  family                   = "tohid-task8"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = "512"
@@ -194,7 +157,7 @@ resource "aws_ecs_task_definition" "tohid_task" {
       logConfiguration = {
         logDriver = "awslogs",
         options = {
-          awslogs-group         = "/ecs/tohid-strapi",
+          awslogs-group         = "/ecs/tohid-task8-strapi",
           awslogs-region        = "us-east-2",
           awslogs-stream-prefix = "ecs"
         }
@@ -220,7 +183,7 @@ resource "aws_ecs_task_definition" "tohid_task" {
 }
 
 resource "aws_ecs_service" "tohid_service" {
-  name            = "tohid-service-v2"
+  name            = "tohid-task8-service"
   cluster         = aws_ecs_cluster.tohid_cluster.id
   task_definition = aws_ecs_task_definition.tohid_task.arn
   launch_type     = "FARGATE"
