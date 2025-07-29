@@ -639,3 +639,243 @@ aws cloudwatch get-dashboard --dashboard-name Strapi-ECS-Dashboard
 - Alarms can be extended with SNS notifications for email/SMS alerts
 - Dashboard provides comprehensive visibility without additional setup
 - Monitoring costs are minimal for small to medium workloads
+
+---
+
+# TASK 9 – Cost-Optimized ECS Fargate with Spot Instances
+
+This task optimizes the Strapi ECS Fargate deployment by implementing Fargate Spot instances, providing significant cost savings while maintaining high availability and performance. The deployment includes comprehensive CloudWatch monitoring and uses the same infrastructure as Task 8 but with cost-optimized compute resources.
+
+## Overview
+- **Fargate Spot Instances**: Up to 70% cost savings compared to regular Fargate
+- **Automatic Task Replacement**: ECS handles Spot interruptions seamlessly
+- **Comprehensive Monitoring**: Full CloudWatch dashboard and alarms
+- **Production Ready**: Includes RDS, ALB, and security best practices
+
+## Key Benefits
+
+### Cost Optimization
+- **70% cost reduction** compared to regular Fargate instances
+- **Pay-as-you-use** pricing model
+- **No upfront costs** or long-term commitments
+- **Automatic scaling** based on demand
+
+### High Availability
+- **Automatic task replacement** when Spot instances are interrupted
+- **Multi-AZ deployment** across availability zones
+- **Load balancer health checks** ensure service continuity
+- **Graceful handling** of Spot interruptions
+
+### Production Features
+- **Comprehensive monitoring** with CloudWatch dashboards and alarms
+- **Centralized logging** with CloudWatch Logs
+- **Security groups** and IAM roles for access control
+- **RDS PostgreSQL** for persistent data storage
+
+## Prerequisites
+- Completed Task 8 (ECS Fargate with monitoring)
+- AWS account with permissions for ECS, ECR, VPC, ALB, RDS, and CloudWatch
+- Terraform installed locally
+- ECR repository with Strapi Docker image
+
+## 1. Infrastructure Components
+
+### ECS Fargate Spot Configuration
+- **Capacity Provider Strategy**: Uses `FARGATE_SPOT` with weight 1
+- **Task Definition**: Optimized for Spot instances with proper resource allocation
+- **Service Configuration**: Automatic task replacement and health monitoring
+
+### Core Infrastructure
+- **ECS Cluster**: Managed Fargate cluster
+- **Application Load Balancer**: Multi-AZ load balancer with health checks
+- **RDS PostgreSQL**: Managed database with automated backups
+- **Security Groups**: Network security with proper port configurations
+- **IAM Roles**: Least-privilege access for ECS tasks
+
+### Monitoring & Observability
+- **CloudWatch Dashboard**: Real-time monitoring with 6 comprehensive widgets
+- **Automated Alarms**: 8 different alarms for proactive issue detection
+- **Log Management**: Centralized logging with CloudWatch Log Groups
+- **Metrics Collection**: CPU, Memory, Network, Response Time, and Database metrics
+
+## 2. Deployment Steps
+
+### Step 1: Navigate to Task 9 Directory
+```sh
+cd terraform6_task9
+```
+
+### Step 2: Configure Variables
+Update `terraform.tfvars` with your ECR image URL:
+```hcl
+ecr_image_url = "607700977843.dkr.ecr.us-east-2.amazonaws.com/strapi-app-tohid:latest"
+```
+
+### Step 3: Deploy Infrastructure
+```sh
+terraform init
+terraform plan
+terraform apply
+```
+
+### Step 4: Access Strapi
+After deployment, access your application using the ALB DNS name from the Terraform outputs.
+
+## 3. Fargate Spot Configuration
+
+### ECS Service Configuration
+The key difference from regular Fargate is the capacity provider strategy:
+
+```hcl
+resource "aws_ecs_service" "tohid_service" {
+  name            = "tohid-task9-service"
+  cluster         = aws_ecs_cluster.tohid_cluster.id
+  task_definition = aws_ecs_task_definition.tohid_task.arn
+  desired_count   = 1
+  force_new_deployment = true
+
+  capacity_provider_strategy {
+    capacity_provider = "FARGATE_SPOT"
+    weight            = 1
+  }
+
+  # ... rest of configuration
+}
+```
+
+### Task Definition
+Optimized for Spot instances with proper resource allocation:
+
+```hcl
+resource "aws_ecs_task_definition" "tohid_task" {
+  family                   = "tohid-task9"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = "512"
+  memory                   = "1024"
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role_tohid.arn
+  task_role_arn            = aws_iam_role.ecs_task_execution_role_tohid.arn
+
+  # ... container definitions
+}
+```
+
+## 4. Monitoring Features
+
+### Real-time Dashboard
+- **ECS CPU & Memory Utilization**: Monitor resource usage
+- **ECS Task Count**: Track running vs pending tasks
+- **ECS Network Traffic**: Monitor network performance
+- **ALB Response Time & Request Count**: Application performance metrics
+- **ALB HTTP Status Codes**: Error rate monitoring
+- **RDS Metrics**: Database performance and connections
+
+### Proactive Alerting
+- **High CPU/Memory Utilization**: >80% for 2 periods
+- **Task Count Monitoring**: <1 running task for 2 periods
+- **ALB Response Time**: >5 seconds for 2 periods
+- **5XX Error Rate**: >10 errors for 2 periods
+- **RDS Performance**: CPU and connection monitoring
+
+## 5. Cost Optimization Strategies
+
+### Spot Instance Best Practices
+- **Multi-AZ Deployment**: Reduces Spot interruption impact
+- **Health Checks**: Ensures service availability during interruptions
+- **Automatic Scaling**: Responds to demand changes
+- **Resource Optimization**: Right-sized CPU and memory allocation
+
+### Monitoring for Cost Control
+- **Resource Utilization Tracking**: Identify over/under-provisioned resources
+- **Performance Metrics**: Optimize based on actual usage patterns
+- **Cost Alerts**: Monitor spending and set budget limits
+- **Efficiency Analysis**: Regular review of resource allocation
+
+## 6. Handling Spot Interruptions
+
+### Automatic Recovery
+- **ECS Service**: Automatically replaces interrupted tasks
+- **Load Balancer**: Routes traffic to healthy instances
+- **Health Checks**: Ensures only healthy tasks receive traffic
+- **Graceful Shutdown**: Proper container shutdown procedures
+
+### Best Practices
+- **Stateless Applications**: Design for easy task replacement
+- **External Storage**: Use RDS for persistent data
+- **Health Endpoints**: Implement proper health check endpoints
+- **Logging**: Centralized logging for debugging
+
+## 7. Production Considerations
+
+### Security
+- **Security Groups**: Restrict network access to necessary ports
+- **IAM Roles**: Least-privilege access for ECS tasks
+- **RDS Security**: Database not publicly accessible
+- **Encryption**: Data encryption in transit and at rest
+
+### Scalability
+- **Auto Scaling**: Configure based on CloudWatch metrics
+- **Load Distribution**: Multi-AZ deployment for high availability
+- **Resource Planning**: Monitor and adjust resource allocation
+- **Performance Tuning**: Optimize based on monitoring data
+
+## 8. Troubleshooting
+
+### Common Issues
+1. **Spot Interruptions**: Normal behavior, tasks will be replaced automatically
+2. **High Costs**: Check resource allocation and utilization
+3. **Performance Issues**: Monitor CloudWatch metrics and adjust resources
+4. **Service Unavailability**: Check health checks and security groups
+
+### Useful Commands
+```sh
+# Check ECS service status
+aws ecs describe-services --cluster tohid-task9-cluster --services tohid-task9-service
+
+# View CloudWatch logs
+aws logs describe-log-streams --log-group-name /ecs/tohid-task9-strapi
+
+# Check ALB target health
+aws elbv2 describe-target-health --target-group-arn <target-group-arn>
+
+# Monitor Spot instance pricing
+aws ec2 describe-spot-price-history --instance-types fargate --product-description "Linux/UNIX"
+```
+
+## 9. Integration with CI/CD
+
+### Automated Deployment
+- **GitHub Actions**: Automated build and deployment pipeline
+- **Terraform**: Infrastructure as Code for consistent deployments
+- **ECR**: Container image management and versioning
+- **Monitoring**: Automated monitoring setup with each deployment
+
+### Deployment Workflow
+1. **Build**: Docker image built and pushed to ECR
+2. **Deploy**: Terraform applies infrastructure changes
+3. **Monitor**: CloudWatch monitoring automatically configured
+4. **Verify**: Health checks confirm successful deployment
+
+## 10. Cost Comparison
+
+### Regular Fargate vs Fargate Spot
+| Metric | Regular Fargate | Fargate Spot | Savings |
+|--------|----------------|--------------|---------|
+| CPU (0.5 vCPU) | ~$0.04048/hour | ~$0.01214/hour | 70% |
+| Memory (1GB) | ~$0.00445/hour | ~$0.00134/hour | 70% |
+| **Total** | **~$0.04493/hour** | **~$0.01348/hour** | **70%** |
+
+### Monthly Cost Example
+- **Regular Fargate**: ~$32.35/month (24/7 usage)
+- **Fargate Spot**: ~$9.71/month (24/7 usage)
+- **Annual Savings**: ~$271.68/year
+
+## Notes
+- Fargate Spot availability varies by region and time
+- Tasks may be interrupted when AWS needs capacity back
+- ECS automatically replaces interrupted tasks
+- Monitor CloudWatch metrics for optimal performance
+- Consider using a mix of Spot and On-Demand for critical workloads
+- All infrastructure is deployed as Infrastructure as Code
+- Comprehensive monitoring ensures operational excellence
+- Cost savings can be significant for development and production workloads

@@ -1,7 +1,7 @@
 terraform {
   backend "s3" {
     bucket         = "strapi-tf-s3"
-    key            = "terraform5_task8/terraform.tfstate"
+    key            = "terraform6_task9/terraform.tfstate"
     region         = "us-east-2"
     use_lockfile   = true
     encrypt        = true
@@ -27,7 +27,7 @@ data "aws_subnets" "default" {
 
 # Security group for ECS service
 resource "aws_security_group" "tohid_ecr_sg" {
-  name        = "tohid-task8-sg"
+  name        = "tohid-task9-sg"
   description = "Allow HTTP/Strapi traffic"
   vpc_id      = data.aws_vpc.default.id
 
@@ -61,7 +61,7 @@ resource "aws_security_group" "tohid_ecr_sg" {
 }
 
 resource "aws_lb" "tohid_alb" {
-  name               = "tohid-task8"
+  name               = "tohid-task9"
   internal           = false
   load_balancer_type = "application"
   subnets = [
@@ -76,7 +76,7 @@ resource "aws_lb" "tohid_alb" {
 
 
 resource "aws_lb_target_group" "tohid_tg" {
-  name        = "tohid-task8-tg"
+  name        = "tohid-task9-tg"
   port        = 1337
   protocol    = "HTTP"
   vpc_id      = data.aws_vpc.default.id
@@ -106,16 +106,16 @@ resource "aws_lb_listener" "http" {
 }
 
 resource "aws_ecs_cluster" "tohid_cluster" {
-  name = "tohid-task8-cluster"
+  name = "tohid-task9-cluster"
 }
 
 resource "aws_cloudwatch_log_group" "tohid_strapi" {
-  name              = "/ecs/tohid-task8-strapi"
+  name              = "/ecs/tohid-task9-strapi"
   retention_in_days = 7
 }
 
 resource "aws_iam_role" "ecs_task_execution_role_tohid" {
-  name = "ecsTaskExecutionRole-tohid-task8"
+  name = "ecsTaskExecutionRole-tohid-task9"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -135,7 +135,7 @@ resource "aws_iam_role_policy_attachment" "ecs_execution_policy" {
 }
 
 resource "aws_ecs_task_definition" "tohid_task" {
-  family                   = "tohid-task8"
+  family                   = "tohid-task9"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = "512"
@@ -157,7 +157,7 @@ resource "aws_ecs_task_definition" "tohid_task" {
       logConfiguration = {
         logDriver = "awslogs",
         options = {
-          awslogs-group         = "/ecs/tohid-task8-strapi",
+          awslogs-group         = "/ecs/tohid-task9-strapi",
           awslogs-region        = "us-east-2",
           awslogs-stream-prefix = "ecs"
         }
@@ -183,12 +183,16 @@ resource "aws_ecs_task_definition" "tohid_task" {
 }
 
 resource "aws_ecs_service" "tohid_service" {
-  name            = "tohid-task8-service"
+  name            = "tohid-task9-service"
   cluster         = aws_ecs_cluster.tohid_cluster.id
   task_definition = aws_ecs_task_definition.tohid_task.arn
-  launch_type     = "FARGATE"
   desired_count   = 1
   force_new_deployment = true
+
+  capacity_provider_strategy {
+    capacity_provider = "FARGATE_SPOT"
+    weight            = 1
+  }
 
   network_configuration {
     subnets         = [
