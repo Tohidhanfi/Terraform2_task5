@@ -900,7 +900,7 @@ This task covers the practical steps to host and publish your Strapi project aft
 
 ## 1. Access Your Strapi Admin Panel
 
-### Step 1: Get the ALB DNS Name
+### Step 1:  Get the ALB DNS Name
 ```sh
 cd terraform6_task9
 terraform output
