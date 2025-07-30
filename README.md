@@ -879,3 +879,319 @@ aws ec2 describe-spot-price-history --instance-types fargate --product-descripti
 - All infrastructure is deployed as Infrastructure as Code
 - Comprehensive monitoring ensures operational excellence
 - Cost savings can be significant for development and production workloads
+
+---
+
+# TASK 10 – Host and Publish Strapi Project
+
+This task covers the practical steps to host and publish your Strapi project after deployment, including content management, API configuration, and public access setup.
+
+## Overview
+- **Content Management**: Create and manage content types, collections, and singles
+- **API Configuration**: Set up public access and configure endpoints
+- **User Management**: Configure roles and permissions for public access
+- **Content Publishing**: Publish content and test APIs
+- **Frontend Integration**: Connect frontend applications to Strapi APIs
+
+## Prerequisites
+- Completed Task 9 (ECS Fargate Spot deployment)
+- Access to the ALB DNS name from Terraform outputs
+- Basic understanding of Strapi admin panel
+
+## 1. Access Your Strapi Admin Panel
+
+### Step 1: Get the ALB DNS Name
+```sh
+cd terraform6_task9
+terraform output
+```
+
+Look for the ALB DNS name in the outputs, which will be something like:
+`tohid-task9-1234567890.us-east-2.elb.amazonaws.com`
+
+### Step 2: Access Admin Panel
+Open your browser and navigate to:
+```
+http://<alb-dns-name>/admin
+```
+
+### Step 3: Create Admin Account
+- Fill in the required information:
+  - **First Name**: Your first name
+  - **Last Name**: Your last name
+  - **Email**: Your email address
+  - **Password**: Create a strong password
+  - **Confirm Password**: Re-enter your password
+- Click **"Let's start"**
+
+## 2. Create Content Types
+
+### Collections (Multiple Entries)
+1. **Navigate to Content-Types Builder**
+   - Go to **Content-Types Builder** in the left sidebar
+   - Click **"Create new collection type"**
+
+2. **Create a Blog Post Collection**
+   - **Display name**: `Blog Post`
+   - **API ID**: `blog-post`
+   - Click **"Continue"**
+
+3. **Add Fields**
+   - **Title** (Text field):
+     - Type: `Text`
+     - Name: `title`
+     - Required: ✓
+   - **Content** (Rich Text field):
+     - Type: `Rich text`
+     - Name: `content`
+     - Required: ✓
+   - **Author** (Text field):
+     - Type: `Text`
+     - Name: `author`
+     - Required: ✓
+   - **Published Date** (Date field):
+     - Type: `Date`
+     - Name: `published_date`
+     - Required: ✓
+
+4. **Save and Generate API**
+   - Click **"Save"**
+   - Click **"Generate API"**
+
+### Singles (Single Entries)
+1. **Create a Home Page Single**
+   - Go to **Content-Types Builder**
+   - Click **"Create new single type"**
+   - **Display name**: `Home Page`
+   - **API ID**: `home-page`
+   - Click **"Continue"**
+
+2. **Add Fields**
+   - **Hero Title** (Text field):
+     - Type: `Text`
+     - Name: `hero_title`
+     - Required: ✓
+   - **Hero Description** (Long Text field):
+     - Type: `Long text`
+     - Name: `hero_description`
+     - Required: ✓
+   - **Featured Image** (Media field):
+     - Type: `Media`
+     - Name: `featured_image`
+     - Required: ✗
+
+3. **Save and Generate API**
+   - Click **"Save"**
+   - Click **"Generate API"**
+
+## 3. Configure Roles & Permissions
+
+### Step 1: Access Users & Permissions
+- Go to **Settings** → **Users & Permissions Plugin**
+
+### Step 2: Configure Public Role
+1. **Select "Public" role**
+2. **Enable permissions for your content types:**
+   - **Blog Post**: 
+     - ✓ `find`
+     - ✓ `findOne`
+   - **Home Page**:
+     - ✓ `find`
+     - ✓ `findOne`
+
+### Step 3: Configure Authenticated Role (Optional)
+1. **Select "Authenticated" role**
+2. **Enable additional permissions:**
+   - **Blog Post**:
+     - ✓ `create`
+     - ✓ `update`
+     - ✓ `delete`
+   - **Home Page**:
+     - ✓ `update`
+
+### Step 4: Save Permissions
+- Click **"Save"** to apply the changes
+
+## 4. Create and Publish Content
+
+### Create Blog Posts
+1. **Navigate to Content Manager**
+   - Go to **Content Manager** → **Blog Post**
+   - Click **"Create new entry"**
+
+2. **Add Content**
+   - **Title**: "Welcome to My Strapi Blog"
+   - **Content**: Add your blog content using the rich text editor
+   - **Author**: "Your Name"
+   - **Published Date**: Select today's date
+
+3. **Publish Content**
+   - Click **"Save"**
+   - Click **"Publish"**
+
+### Create Home Page Content
+1. **Navigate to Home Page**
+   - Go to **Content Manager** → **Home Page**
+   - Click **"Create new entry"**
+
+2. **Add Content**
+   - **Hero Title**: "Welcome to My Website"
+   - **Hero Description**: "This is a sample description for the home page"
+   - **Featured Image**: Upload an image (optional)
+
+3. **Publish Content**
+   - Click **"Save"**
+   - Click **"Publish"**
+
+## 5. Test Your APIs
+
+### API Endpoints
+Your APIs will be available at:
+- **Blog Posts**: `http://<alb-dns-name>/api/blog-posts`
+- **Single Blog Post**: `http://<alb-dns-name>/api/blog-posts/1`
+- **Home Page**: `http://<alb-dns-name>/api/home-page`
+
+### Test with cURL
+```bash
+# Get all blog posts
+curl http://<alb-dns-name>/api/blog-posts
+
+# Get a specific blog post
+curl http://<alb-dns-name>/api/blog-posts/1
+
+# Get home page content
+curl http://<alb-dns-name>/api/home-page
+```
+
+### Test with Browser
+- Open your browser and navigate to the API URLs
+- You should see JSON responses with your content
+
+## 6. Frontend Integration
+
+### JavaScript/Fetch Example
+```javascript
+// Fetch all blog posts
+fetch('http://<alb-dns-name>/api/blog-posts')
+  .then(response => response.json())
+  .then(data => {
+    console.log('Blog posts:', data);
+  });
+
+// Fetch home page content
+fetch('http://<alb-dns-name>/api/home-page')
+  .then(response => response.json())
+  .then(data => {
+    console.log('Home page:', data);
+  });
+```
+
+### React Example
+```jsx
+import React, { useState, useEffect } from 'react';
+
+function BlogPosts() {
+  const [posts, setPosts] = useState([]);
+
+  useEffect(() => {
+    fetch('http://<alb-dns-name>/api/blog-posts')
+      .then(response => response.json())
+      .then(data => setPosts(data.data));
+  }, []);
+
+  return (
+    <div>
+      {posts.map(post => (
+        <div key={post.id}>
+          <h2>{post.attributes.title}</h2>
+          <p>{post.attributes.content}</p>
+          <small>By {post.attributes.author}</small>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+## 7. Advanced Configuration
+
+### Custom API Responses
+You can customize API responses by modifying the controllers in:
+```
+src/api/[content-type]/controllers/[content-type].js
+```
+
+### API Documentation
+- Access API documentation at: `http://<alb-dns-name>/documentation`
+- This provides interactive API documentation
+
+### Media Management
+- Upload images through the admin panel
+- Access media at: `http://<alb-dns-name>/uploads/`
+
+## 8. Security Best Practices
+
+### Environment Variables
+Ensure your Strapi secrets are properly configured:
+```env
+APP_KEYS=your-app-keys
+API_TOKEN_SALT=your-api-token-salt
+ADMIN_JWT_SECRET=your-admin-jwt-secret
+TRANSFER_TOKEN_SALT=your-transfer-token-salt
+ENCRYPTION_KEY=your-encryption-key
+```
+
+### CORS Configuration
+If connecting from a frontend, configure CORS in `config/middlewares.js`:
+```javascript
+module.exports = {
+  settings: {
+    cors: {
+      enabled: true,
+      origin: ['http://localhost:3000', 'https://yourdomain.com']
+    }
+  }
+};
+```
+
+## 9. Monitoring and Maintenance
+
+### Check Application Health
+- Monitor your application through CloudWatch dashboards
+- Check ECS service logs for any issues
+- Verify ALB health checks are passing
+
+### Backup Strategy
+- RDS provides automated backups
+- Consider implementing additional backup strategies for content
+- Export content regularly through the admin panel
+
+## 10. Troubleshooting
+
+### Common Issues
+1. **Cannot access admin panel**: Check ALB security groups and health checks
+2. **API returns 403**: Verify public role permissions
+3. **Content not appearing**: Ensure content is published
+4. **Media not loading**: Check upload permissions and file sizes
+
+### Useful Commands
+```bash
+# Check ECS service status
+aws ecs describe-services --cluster tohid-task9-cluster --services tohid-task9-service
+
+# View application logs
+aws logs describe-log-streams --log-group-name /ecs/tohid-task9-strapi
+
+# Test ALB health
+curl -I http://<alb-dns-name>/admin
+```
+
+## Notes
+- Always test APIs after publishing content
+- Monitor application performance through CloudWatch
+- Keep your admin credentials secure
+- Regularly backup your content and database
+- Consider implementing authentication for sensitive operations
+- Use HTTPS in production environments
+- Implement rate limiting for public APIs
+- Monitor API usage and performance metrics
