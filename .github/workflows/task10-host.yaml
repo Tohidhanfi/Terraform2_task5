@@ -30,7 +30,7 @@ jobs:
       - name: Build, tag, and push Docker image
         run: |
           IMAGE_TAG=${{ github.sha }}
-          docker build -f Dockerfile-dev -t $ECR_REPOSITORY:$IMAGE_TAG ./strapi-app
+          docker build -f ./strapi-app/Dockerfile-dev -t $ECR_REPOSITORY:$IMAGE_TAG ./strapi-app
           docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         env:
