@@ -176,7 +176,8 @@ resource "aws_ecs_task_definition" "tohid_task" {
         { name = "API_TOKEN_SALT", value = "PmzN60QIfFJBz4tGtWWrDg==" },
         { name = "ADMIN_JWT_SECRET", value = "YBeqRecVoyQg7PJGSLv1hg==" },
         { name = "TRANSFER_TOKEN_SALT", value = "eHnkCSXpzUWOmXQBmb0GgQ==" },
-        { name = "ENCRYPTION_KEY", value = "MjiUdTqauYmpqsW3wIlnzg==" }
+        { name = "ENCRYPTION_KEY", value = "MjiUdTqauYmpqsW3wIlnzg==" },
+        { name = "NODE_ENV", value = "development" }
       ]
     }
   ])
