@@ -13,6 +13,9 @@ RUN npm install
 # Copy the rest of the application code
 COPY . .
 
+# Build the admin panel (required even in development mode)
+RUN npm run build
+
 # Expose the default Strapi port
 EXPOSE 1337
 
