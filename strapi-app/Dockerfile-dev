@@ -1,6 +1,10 @@
 # Use official Node.js image
 FROM node:22-alpine
 
+# Set environment variables
+ARG NODE_ENV=development
+ENV NODE_ENV=${NODE_ENV}
+
 # Set working directory
 WORKDIR /app
 
@@ -19,5 +23,5 @@ RUN npm run build
 # Expose the default Strapi port
 EXPOSE 1337
 
-# Start the Strapi app in development mode with admin panel
-CMD ["npm", "run", "develop", "--", "--watch-admin"] 
+# Start the Strapi app in development mode
+CMD ["npm", "run", "develop"] 

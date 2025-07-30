@@ -1,6 +1,10 @@
 # Use official Node.js image
 FROM node:22-alpine
 
+# Set environment variables
+ARG NODE_ENV=production
+ENV NODE_ENV=${NODE_ENV}
+
 # Set working directory
 WORKDIR /app
 
