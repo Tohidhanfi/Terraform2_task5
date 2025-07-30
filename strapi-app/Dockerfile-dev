@@ -19,5 +19,5 @@ RUN npm run build
 # Expose the default Strapi port
 EXPOSE 1337
 
-# Start the Strapi app in development mode
-CMD ["npm", "run", "develop"] 
+# Start the Strapi app in development mode with admin panel
+CMD ["npm", "run", "develop", "--", "--watch-admin"] 
