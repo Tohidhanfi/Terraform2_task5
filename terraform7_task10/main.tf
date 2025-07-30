@@ -86,7 +86,7 @@ resource "aws_lb_target_group" "tohid_tg" {
     path                = "/"
     port                = "1337"
     protocol            = "HTTP"
-    matcher             = "200"
+    matcher             = "200,302"
     interval            = 30
     timeout             = 5
     healthy_threshold   = 2
