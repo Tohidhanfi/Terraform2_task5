@@ -1,7 +1,7 @@
 terraform {
   backend "s3" {
     bucket         = "strapi-tf-s3"
-    key            = "terraform7_task10/terraform.tfstate"
+    key            = "terraform6_task10/terraform.tfstate"
     region         = "us-east-2"
     use_lockfile   = true
     encrypt        = true
@@ -86,7 +86,7 @@ resource "aws_lb_target_group" "tohid_tg" {
     path                = "/"
     port                = "1337"
     protocol            = "HTTP"
-    matcher             = "200,302"
+    matcher             = "200"
     interval            = 30
     timeout             = 5
     healthy_threshold   = 2
