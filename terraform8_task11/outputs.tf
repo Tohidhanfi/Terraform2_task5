@@ -1,6 +1,6 @@
 output "alb_dns_name" {
   description = "DNS name of the Application Load Balancer"
-  value       = aws_lb.main.dns_name
+  value       = aws_lb.tohid_alb.dns_name
 }
 
 output "blue_target_group_arn" {
@@ -25,10 +25,10 @@ output "codedeploy_deployment_group_name" {
 
 output "ecs_cluster_name" {
   description = "Name of the ECS cluster"
-  value       = aws_ecs_cluster.main.name
+  value       = aws_ecs_cluster.tohid_cluster.name
 }
 
 output "ecs_service_name" {
   description = "Name of the ECS service"
-  value       = aws_ecs_service.main.name
+  value       = aws_ecs_service.tohid_service.name
 }

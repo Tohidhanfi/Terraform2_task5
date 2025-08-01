@@ -144,7 +144,7 @@ resource "aws_lb_target_group" "green" {
 
 # ALB Listener
 resource "aws_lb_listener" "main" {
-  load_balancer_arn = aws_lb.main.arn
+  load_balancer_arn = aws_lb.tohid_alb.arn
   port              = 80
   protocol          = "HTTP"
 
