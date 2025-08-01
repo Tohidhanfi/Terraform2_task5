@@ -253,14 +253,6 @@ resource "aws_ecs_task_definition" "tohid_task" {
         { name = "DATABASE_USERNAME", value = "tohid" },
         { name = "DATABASE_PASSWORD", value = "tohid123" },
         { name = "DATABASE_SSL", value = "false" },
-        { name = "DATABASE_POOL_MIN", value = "2" },
-        { name = "DATABASE_POOL_MAX", value = "10" },
-        { name = "DATABASE_POOL_ACQUIRE_TIMEOUT_MILLIS", value = "60000" },
-        { name = "DATABASE_POOL_CREATE_TIMEOUT_MILLIS", value = "30000" },
-        { name = "DATABASE_POOL_DESTROY_TIMEOUT_MILLIS", value = "5000" },
-        { name = "DATABASE_POOL_IDLE_TIMEOUT_MILLIS", value = "30000" },
-        { name = "DATABASE_POOL_REAP_INTERVAL_MILLIS", value = "1000" },
-        { name = "DATABASE_POOL_CREATE_RETRY_INTERVAL_MILLIS", value = "200" },
         { name = "APP_KEYS", value = "468cnhT7DiBFuGxUXVh8tA==,0ijw28sTuKb2Xi2luHX6zQ==,TfN3QRc00kFU3Qtg320QNg==,hHRI+D6KWZ0g5PER1WanWw==" },
         { name = "API_TOKEN_SALT", value = "PmzN60QIfFJBz4tGtWWrDg==" },
         { name = "ADMIN_JWT_SECRET", value = "YBeqRecVoyQg7PJGSLv1hg==" },
@@ -382,7 +374,7 @@ resource "aws_iam_role_policy_attachment" "codedeploy_service_role_policy" {
   role       = aws_iam_role.codedeploy_service_role.name
 }
 
-# Additional IAM policy for CodeDeploy to access ECS
+# Additional IAM policy for CodeDeploy to access ECS and ELB
 resource "aws_iam_role_policy" "codedeploy_ecs_policy" {
   name = "CodeDeployECSPolicy"
   role = aws_iam_role.codedeploy_service_role.id
@@ -410,6 +402,27 @@ resource "aws_iam_role_policy" "codedeploy_ecs_policy" {
         Resource = [
           aws_iam_role.ecs_task_execution_role.arn
         ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "elasticloadbalancing:DescribeTargetGroups",
+          "elasticloadbalancing:DescribeTargetHealth",
+          "elasticloadbalancing:DescribeLoadBalancers",
+          "elasticloadbalancing:DescribeListeners",
+          "elasticloadbalancing:ModifyListener",
+          "elasticloadbalancing:RegisterTargets",
+          "elasticloadbalancing:DeregisterTargets"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "cloudwatch:GetMetricStatistics",
+          "cloudwatch:DescribeAlarms"
+        ]
+        Resource = "*"
       }
     ]
   })
