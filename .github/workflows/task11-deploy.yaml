@@ -1,9 +1,8 @@
-name: Deploy Strapi with Blue/Green Deployment
+name: Deploy Strapi to monitor
 
 on:
   push:
-    branches: [main]
-  workflow_dispatch:
+    branches: []
 
 jobs:
   deploy:
@@ -52,38 +51,6 @@ jobs:
       - name: Terraform Apply
         run: terraform apply -auto-approve -var="ecr_image_url=${{ env.IMAGE_URL }}"
         working-directory: terraform8_task11
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ env.AWS_REGION }}
-
-      - name: Trigger CodeDeploy Deployment
-        run: |
-          # Get the latest task definition ARN
-          TASK_DEFINITION_ARN=$(aws ecs describe-task-definition --task-definition tohid-task11 --query 'taskDefinition.taskDefinitionArn' --output text)
-          
-          # Create AppSpec content
-          APPSPEC_CONTENT='{
-            "version": 1,
-            "Resources": [{
-              "TargetService": {
-                "Type": "AWS::ECS::Service",
-                "Properties": {
-                  "TaskDefinition": "'$TASK_DEFINITION_ARN'",
-                  "LoadBalancerInfo": {
-                    "ContainerName": "strapi",
-                    "ContainerPort": 1337
-                  }
-                }
-              }
-            }]
-          }'
-          
-          # Create CodeDeploy deployment
-          aws deploy create-deployment \
-            --application-name tohid-task11-codedeploy-app \
-            --deployment-group-name tohid-task11-deployment-group \
-            --revision revisionType=AppSpecContent,appSpecContent="$APPSPEC_CONTENT"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

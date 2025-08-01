@@ -17,11 +17,26 @@ data "aws_vpc" "default" {
   default = true
 }
 
-data "aws_subnets" "default" {
+data "aws_subnets" "default_vpc_subnets" {
   filter {
     name   = "vpc-id"
     values = [data.aws_vpc.default.id]
   }
+}
+
+data "aws_subnet" "selected" {
+  count = length(data.aws_subnets.default_vpc_subnets.ids)
+  id    = data.aws_subnets.default_vpc_subnets.ids[count.index]
+}
+
+locals {
+  alb_subnet_ids = distinct([
+    for az in distinct([
+      for s in data.aws_subnet.selected : s.availability_zone
+    ]) : (
+      [for s in data.aws_subnet.selected : s if s.availability_zone == az][0].id
+    )
+  ])
 }
 
 # Security Groups
@@ -86,7 +101,7 @@ resource "aws_lb" "tohid_alb" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
-  subnets            = ["subnet-0c0bb5df2571165a9", "subnet-0cc2ddb32492bcc41", "subnet-0f768008c6324831f"]
+  subnets            = local.alb_subnet_ids
 
   enable_deletion_protection = false
 
@@ -209,14 +224,15 @@ resource "aws_ecs_task_definition" "tohid_task" {
       portMappings = [
         {
           containerPort = 1337
+          hostPort      = 1337
           protocol      = "tcp"
         }
       ]
       logConfiguration = {
         logDriver = "awslogs",
         options = {
-          awslogs-group         = "/ecs/tohid-task11-strapi",
-          awslogs-region        = "us-east-2",
+          awslogs-group         = aws_cloudwatch_log_group.strapi.name
+          awslogs-region        = "us-east-2"
           awslogs-stream-prefix = "ecs"
         }
       }
@@ -244,12 +260,12 @@ resource "aws_ecs_task_definition" "tohid_task" {
 resource "aws_ecs_service" "tohid_service" {
   name            = "tohid-task11-service"
   cluster         = aws_ecs_cluster.tohid_cluster.id
-  task_definition = aws_ecs_task_definition.tohid_task.arn
+  task_definition = aws_ecs_task_definition.tohid_task.arn_without_revision
   desired_count   = 1
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets         = ["subnet-0c0bb5df2571165a9", "subnet-0cc2ddb32492bcc41", "subnet-0f768008c6324831f"]
+    subnets         = local.alb_subnet_ids
     security_groups = [aws_security_group.ecs_sg.id]
     assign_public_ip = true
   }
@@ -266,11 +282,6 @@ resource "aws_ecs_service" "tohid_service" {
   }
 
   depends_on = [aws_lb_listener.main]
-
-  # Ignore task definition changes since CodeDeploy will manage them
-  lifecycle {
-    ignore_changes = [task_definition]
-  }
 }
 
 # CodeDeploy Application
@@ -286,9 +297,25 @@ resource "aws_codedeploy_deployment_group" "main" {
   deployment_config_name = "CodeDeployDefault.ECSCanary10Percent5Minutes"
   service_role_arn       = aws_iam_role.codedeploy_service_role.arn
 
+  deployment_style {
+    deployment_type = "BLUE_GREEN"
+    deployment_option = "WITH_TRAFFIC_CONTROL"
+  }
+
   auto_rollback_configuration {
     enabled = true
     events  = ["DEPLOYMENT_FAILURE"]
+  }
+
+  blue_green_deployment_config {
+    terminate_blue_instances_on_deployment_success {
+      action = "TERMINATE"
+      termination_wait_time_in_minutes = 5
+    }
+
+    deployment_ready_option {
+      action_on_timeout = "CONTINUE_DEPLOYMENT"
+    }
   }
 
   ecs_service {
@@ -312,21 +339,7 @@ resource "aws_codedeploy_deployment_group" "main" {
     }
   }
 
-  blue_green_deployment_config {
-    deployment_ready_option {
-      action_on_timeout = "CONTINUE_DEPLOYMENT"
-    }
-
-    terminate_blue_instances_on_deployment_success {
-      action                           = "TERMINATE"
-      termination_wait_time_in_minutes = 5
-    }
-  }
-
-  deployment_style {
-    deployment_option = "WITH_TRAFFIC_CONTROL"
-    deployment_type   = "BLUE_GREEN"
-  }
+  depends_on = [aws_iam_role_policy_attachment.codedeploy_service_role_policy]
 }
 
 # IAM Role for CodeDeploy
