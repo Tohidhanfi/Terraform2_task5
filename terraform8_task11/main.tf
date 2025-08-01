@@ -17,26 +17,11 @@ data "aws_vpc" "default" {
   default = true
 }
 
-data "aws_subnets" "default_vpc_subnets" {
+data "aws_subnets" "default" {
   filter {
     name   = "vpc-id"
     values = [data.aws_vpc.default.id]
   }
-}
-
-data "aws_subnet" "selected" {
-  count = length(data.aws_subnets.default_vpc_subnets.ids)
-  id    = data.aws_subnets.default_vpc_subnets.ids[count.index]
-}
-
-locals {
-  alb_subnet_ids = distinct([
-    for az in distinct([
-      for s in data.aws_subnet.selected : s.availability_zone
-    ]) : (
-      [for s in data.aws_subnet.selected : s if s.availability_zone == az][0].id
-    )
-  ])
 }
 
 # Security Groups
@@ -95,13 +80,37 @@ resource "aws_security_group" "ecs_sg" {
   }
 }
 
+resource "aws_security_group" "rds_sg" {
+  name        = "tohid-task11-rds-sg"
+  description = "Security group for RDS instance"
+  vpc_id      = data.aws_vpc.default.id
+
+  ingress {
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [aws_security_group.ecs_sg.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "tohid-task11-rds-sg"
+  }
+}
+
 # Application Load Balancer
 resource "aws_lb" "tohid_alb" {
   name               = "tohid-task11-alb"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
-  subnets            = local.alb_subnet_ids
+  subnets            = ["subnet-0c0bb5df2571165a9", "subnet-0cc2ddb32492bcc41", "subnet-0f768008c6324831f"]
 
   enable_deletion_protection = false
 
@@ -231,8 +240,8 @@ resource "aws_ecs_task_definition" "tohid_task" {
       logConfiguration = {
         logDriver = "awslogs",
         options = {
-          awslogs-group         = aws_cloudwatch_log_group.strapi.name
-          awslogs-region        = "us-east-2"
+          awslogs-group         = "/ecs/tohid-task11-strapi",
+          awslogs-region        = "us-east-2",
           awslogs-stream-prefix = "ecs"
         }
       }
@@ -244,6 +253,14 @@ resource "aws_ecs_task_definition" "tohid_task" {
         { name = "DATABASE_USERNAME", value = "tohid" },
         { name = "DATABASE_PASSWORD", value = "tohid123" },
         { name = "DATABASE_SSL", value = "false" },
+        { name = "DATABASE_POOL_MIN", value = "2" },
+        { name = "DATABASE_POOL_MAX", value = "10" },
+        { name = "DATABASE_POOL_ACQUIRE_TIMEOUT_MILLIS", value = "60000" },
+        { name = "DATABASE_POOL_CREATE_TIMEOUT_MILLIS", value = "30000" },
+        { name = "DATABASE_POOL_DESTROY_TIMEOUT_MILLIS", value = "5000" },
+        { name = "DATABASE_POOL_IDLE_TIMEOUT_MILLIS", value = "30000" },
+        { name = "DATABASE_POOL_REAP_INTERVAL_MILLIS", value = "1000" },
+        { name = "DATABASE_POOL_CREATE_RETRY_INTERVAL_MILLIS", value = "200" },
         { name = "APP_KEYS", value = "468cnhT7DiBFuGxUXVh8tA==,0ijw28sTuKb2Xi2luHX6zQ==,TfN3QRc00kFU3Qtg320QNg==,hHRI+D6KWZ0g5PER1WanWw==" },
         { name = "API_TOKEN_SALT", value = "PmzN60QIfFJBz4tGtWWrDg==" },
         { name = "ADMIN_JWT_SECRET", value = "YBeqRecVoyQg7PJGSLv1hg==" },
@@ -265,7 +282,7 @@ resource "aws_ecs_service" "tohid_service" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets         = local.alb_subnet_ids
+    subnets         = ["subnet-0c0bb5df2571165a9", "subnet-0cc2ddb32492bcc41", "subnet-0f768008c6324831f"]
     security_groups = [aws_security_group.ecs_sg.id]
     assign_public_ip = true
   }

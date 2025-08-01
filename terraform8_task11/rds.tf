@@ -19,7 +19,7 @@ resource "aws_db_instance" "tohid_rds" {
   username               = "tohid"
   password               = "tohid123"
   db_subnet_group_name   = aws_db_subnet_group.tohid_db_subnet_group.name
-  vpc_security_group_ids = [aws_security_group.ecs_sg.id]
+  vpc_security_group_ids = [aws_security_group.rds_sg.id]
   skip_final_snapshot    = true
   publicly_accessible    = true
 
