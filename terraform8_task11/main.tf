@@ -307,6 +307,17 @@ resource "aws_codedeploy_deployment_group" "main" {
     }
   }
 
+  blue_green_deployment_config {
+    deployment_ready_option {
+      action_on_timeout = "CONTINUE_DEPLOYMENT"
+    }
+
+    terminate_blue_instances_on_deployment_success {
+      action                           = "TERMINATE"
+      termination_wait_time_in_minutes = 5
+    }
+  }
+
   deployment_style {
     deployment_option = "WITH_TRAFFIC_CONTROL"
     deployment_type   = "BLUE_GREEN"
@@ -334,4 +345,37 @@ resource "aws_iam_role" "codedeploy_service_role" {
 resource "aws_iam_role_policy_attachment" "codedeploy_service_role_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
   role       = aws_iam_role.codedeploy_service_role.name
+}
+
+# Additional IAM policy for CodeDeploy to access ECS
+resource "aws_iam_role_policy" "codedeploy_ecs_policy" {
+  name = "CodeDeployECSPolicy"
+  role = aws_iam_role.codedeploy_service_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ecs:DescribeServices",
+          "ecs:DescribeTaskDefinition",
+          "ecs:DescribeTasks",
+          "ecs:ListTasks",
+          "ecs:RegisterTaskDefinition",
+          "ecs:UpdateService"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "iam:PassRole"
+        ]
+        Resource = [
+          aws_iam_role.ecs_task_execution_role.arn
+        ]
+      }
+    ]
+  })
 }
