@@ -1,0 +1,87 @@
+name: Deploy Strapi with Blue/Green Deployment
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: us-east-2
+      ECR_REPOSITORY: strapi-app-tohid
+      ECR_REGISTRY: 607700977843.dkr.ecr.us-east-2.amazonaws.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push Docker image
+        run: |
+          IMAGE_TAG=${{ github.sha }}
+          docker build -t $ECR_REPOSITORY:$IMAGE_TAG ./strapi-app
+          docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        env:
+          ECR_REGISTRY: ${{ env.ECR_REGISTRY }}
+          ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
+
+      - name: Set image URL output
+        id: image-url
+        run: echo "IMAGE_URL=$ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }}" >> $GITHUB_ENV
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: terraform8_task11
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -var="ecr_image_url=${{ env.IMAGE_URL }}"
+        working-directory: terraform8_task11
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ env.AWS_REGION }}
+
+      - name: Trigger CodeDeploy Deployment
+        run: |
+          # Get the latest task definition ARN
+          TASK_DEFINITION_ARN=$(aws ecs describe-task-definition --task-definition tohid-task11 --query 'taskDefinition.taskDefinitionArn' --output text)
+          
+          # Create CodeDeploy deployment
+          aws deploy create-deployment \
+            --application-name tohid-task11-codedeploy-app \
+            --deployment-group-name tohid-task11-deployment-group \
+            --revision revisionType=AppSpecContent,appSpecContent='{
+              "version": 1,
+              "Resources": [{
+                "TargetService": {
+                  "Type": "AWS::ECS::Service",
+                  "Properties": {
+                    "TaskDefinition": "'$TASK_DEFINITION_ARN'",
+                    "LoadBalancerInfo": {
+                      "ContainerName": "strapi",
+                      "ContainerPort": 1337
+                    }
+                  }
+                }
+              }]
+            }'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ env.AWS_REGION }}

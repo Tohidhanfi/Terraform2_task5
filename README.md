@@ -1,8 +1,15 @@
 # Strapi Project - Multi-Environment Deployment Guide
 
-This repository contains two main folders:
+This repository contains the following structure:
 - `strapi-app/` — The Strapi application (Dockerized)
-- `terraform/` — Terraform scripts for cloud automation
+- `terraform1_task4/` — Task 4: EC2 deployment with Terraform
+- `terraform2_task5/` — Task 5: CI/CD with GitHub Actions and EC2
+- `terraform3_task6/` — Task 6: ECS Fargate deployment
+- `terraform4_task7/` — Task 7: CI/CD with GitHub Actions and ECS
+- `terraform5_task8/` — Task 8: CloudWatch monitoring
+- `terraform6_task9/` — Task 9: ECS Fargate with Spot instances
+- `terraform7_task10/` — Task 10: Host and publish Strapi project
+- `terraform8_task11/` — Task 11: Blue/Green deployment with CodeDeploy
 
 ---
 
@@ -1195,3 +1202,390 @@ curl -I http://<alb-dns-name>/admin
 - Use HTTPS in production environments
 - Implement rate limiting for public APIs
 - Monitor API usage and performance metrics
+
+---
+
+# TASK 11 – Blue/Green Deployment with AWS CodeDeploy
+
+This task implements a production-ready Blue/Green deployment strategy for the Strapi application using AWS CodeDeploy, ECS Fargate, and Application Load Balancer. This approach ensures zero-downtime deployments with automatic rollback capabilities.
+
+## Overview
+- **Blue/Green Deployment**: Zero-downtime deployments with traffic switching
+- **CodeDeploy Integration**: Automated deployment management with rollback
+- **Canary Strategy**: 10% traffic for 5 minutes before full deployment
+- **Automatic Rollback**: Built-in failure detection and recovery
+- **Production Ready**: Comprehensive monitoring and security
+
+## Key Benefits
+
+### Zero-Downtime Deployments
+- **Traffic Switching**: Seamless transition between Blue and Green environments
+- **Health Monitoring**: Continuous health checks during deployment
+- **Automatic Recovery**: Rollback on deployment failure
+- **Load Balancing**: ALB distributes traffic across healthy instances
+
+### Advanced Deployment Features
+- **Canary Deployment**: Gradual traffic shifting (10% → 100%)
+- **Automatic Rollback**: Reverts to previous version on failure
+- **Task Termination**: Cleans up old tasks after successful deployment
+- **Deployment Monitoring**: Real-time deployment status tracking
+
+### Production Infrastructure
+- **ECS Fargate**: Serverless container management
+- **Application Load Balancer**: Multi-AZ load distribution
+- **RDS PostgreSQL**: Managed database with automated backups
+- **Security Groups**: Network security with proper access controls
+- **CloudWatch Monitoring**: Comprehensive observability
+
+## Prerequisites
+- Completed Task 10 (Strapi hosting and publishing)
+- AWS account with permissions for ECS, CodeDeploy, ALB, RDS, and IAM
+- Terraform installed locally
+- ECR repository with Strapi Docker image
+
+## 1. Infrastructure Components
+
+### ECS Fargate Configuration
+- **ECS Cluster**: Managed Fargate cluster with container insights
+- **Task Definition**: Placeholder definition updated dynamically by CodeDeploy
+- **ECS Service**: Configured with CodeDeploy deployment controller
+- **Security Groups**: Network isolation for ECS tasks
+
+### Application Load Balancer
+- **ALB**: Multi-AZ load balancer with HTTP/HTTPS support
+- **Target Groups**: Blue and Green target groups for traffic routing
+- **Listener**: HTTP listener on port 80 with traffic switching
+- **Health Checks**: Configured for Strapi application (200,302 status codes)
+
+### CodeDeploy Configuration
+- **CodeDeploy Application**: ECS-specific application
+- **Deployment Group**: Blue/Green deployment with canary strategy
+- **Service Role**: IAM role with CodeDeploy permissions
+- **Auto Rollback**: Enabled for deployment failure scenarios
+
+### Database and Security
+- **RDS PostgreSQL**: Managed database with automated backups
+- **Security Groups**: ALB (ports 80,443) and ECS (port 1337) security
+- **IAM Roles**: Least-privilege access for ECS and CodeDeploy
+
+## 2. Deployment Steps
+
+### Step 1: Navigate to Task 11 Directory
+```sh
+cd terraform8_task11
+```
+
+### Step 2: Configure Variables
+Update `terraform.tfvars` with your ECR image URL:
+```hcl
+ecr_image_url = "607700977843.dkr.ecr.us-east-2.amazonaws.com/strapi-app-tohid:latest"
+```
+
+### Step 3: Deploy Infrastructure
+```sh
+terraform init
+terraform plan
+terraform apply
+```
+
+### Step 4: Access Strapi
+After deployment, access your application using the ALB DNS name from the Terraform outputs.
+
+## 3. Blue/Green Deployment Strategy
+
+### Deployment Flow
+1. **Initial State**: Blue environment serves 100% of traffic
+2. **Deployment Trigger**: CodeDeploy creates Green environment
+3. **Health Check**: Green environment passes health checks
+4. **Canary Phase**: 10% traffic shifted to Green for 5 minutes
+5. **Full Deployment**: 100% traffic shifted to Green
+6. **Cleanup**: Blue environment terminated
+
+### CodeDeploy Configuration
+```hcl
+resource "aws_codedeploy_deployment_group" "main" {
+  app_name               = aws_codedeploy_app.main.name
+  deployment_group_name  = "tohid-task11-deployment-group"
+  deployment_config_name = "CodeDeployDefault.ECSCanary10Percent5Minutes"
+  service_role_arn       = aws_iam_role.codedeploy_service_role.arn
+
+  auto_rollback_configuration {
+    enabled = true
+    events  = ["DEPLOYMENT_FAILURE"]
+  }
+
+  ecs_service {
+    cluster_name = aws_ecs_cluster.main.name
+    service_name = aws_ecs_service.main.name
+  }
+
+  load_balancer_info {
+    target_group_pair_info {
+      prod_traffic_route {
+        listener_arns = [aws_lb_listener.main.arn]
+      }
+
+      target_group {
+        name = aws_lb_target_group.blue.name
+      }
+
+      target_group {
+        name = aws_lb_target_group.green.name
+      }
+    }
+  }
+
+  deployment_style {
+    deployment_option = "WITH_TRAFFIC_CONTROL"
+    deployment_type   = "BLUE_GREEN"
+  }
+}
+```
+
+## 4. Target Groups Configuration
+
+### Blue Target Group
+```hcl
+resource "aws_lb_target_group" "blue" {
+  name        = "tohid-task11-blue-tg"
+  port        = 1337
+  protocol    = "HTTP"
+  vpc_id      = data.aws_vpc.default.id
+  target_type = "ip"
+
+  health_check {
+    path                = "/"
+    port                = "1337"
+    protocol            = "HTTP"
+    matcher             = "200,302"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+  }
+}
+```
+
+### Green Target Group
+```hcl
+resource "aws_lb_target_group" "green" {
+  name        = "tohid-task11-green-tg"
+  port        = 1337
+  protocol    = "HTTP"
+  vpc_id      = data.aws_vpc.default.id
+  target_type = "ip"
+
+  health_check {
+    path                = "/"
+    port                = "1337"
+    protocol            = "HTTP"
+    matcher             = "200,302"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+  }
+}
+```
+
+## 5. ECS Service with CodeDeploy
+
+### Service Configuration
+```hcl
+resource "aws_ecs_service" "main" {
+  name            = "tohid-task11-service"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.main.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets         = data.aws_subnets.default.ids
+    security_groups = [aws_security_group.ecs_sg.id]
+    assign_public_ip = true
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.blue.arn
+    container_name   = "strapi"
+    container_port   = 1337
+  }
+
+  # CodeDeploy integration
+  deployment_controller {
+    type = "CODE_DEPLOY"
+  }
+}
+```
+
+## 6. Security Configuration
+
+### ALB Security Group
+```hcl
+resource "aws_security_group" "alb_sg" {
+  name        = "tohid-task11-alb-sg"
+  description = "Security group for ALB"
+  vpc_id      = data.aws_vpc.default.id
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+```
+
+### ECS Security Group
+```hcl
+resource "aws_security_group" "ecs_sg" {
+  name        = "tohid-task11-ecs-sg"
+  description = "Security group for ECS tasks"
+  vpc_id      = data.aws_vpc.default.id
+
+  ingress {
+    from_port       = 1337
+    to_port         = 1337
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb_sg.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+```
+
+## 7. Deployment Process
+
+### Initial Deployment
+1. **Infrastructure Setup**: Deploy ALB, ECS, RDS, and CodeDeploy resources
+2. **Service Creation**: ECS service starts with Blue target group
+3. **Health Verification**: Ensure Blue environment is healthy
+4. **Access Application**: Use ALB DNS name to access Strapi
+
+### Blue/Green Deployment
+1. **Trigger Deployment**: Use AWS CLI or CodeDeploy console
+2. **Green Environment**: CodeDeploy creates new task definition
+3. **Health Check**: Green environment passes health checks
+4. **Traffic Shift**: Gradual traffic shifting (10% → 100%)
+5. **Verification**: Monitor application health during transition
+6. **Cleanup**: Old Blue environment terminated
+
+## 8. Monitoring and Observability
+
+### CloudWatch Integration
+- **ECS Metrics**: CPU, memory, and network utilization
+- **ALB Metrics**: Request count, response time, and error rates
+- **RDS Metrics**: Database performance and connections
+- **CodeDeploy Metrics**: Deployment success/failure rates
+
+### Deployment Monitoring
+- **Deployment Status**: Real-time deployment progress
+- **Health Checks**: Continuous health monitoring
+- **Rollback Triggers**: Automatic rollback on failure
+- **Performance Metrics**: Response time and throughput
+
+## 9. Troubleshooting
+
+### Common Issues
+1. **Deployment Failures**: Check task definition and container health
+2. **Health Check Failures**: Verify application endpoints and security groups
+3. **Traffic Routing Issues**: Check target group configuration
+4. **Rollback Problems**: Verify CodeDeploy service role permissions
+
+### Useful Commands
+```sh
+# Check CodeDeploy deployment status
+aws deploy get-deployment --deployment-id <deployment-id>
+
+# View ECS service events
+aws ecs describe-services --cluster tohid-task11-cluster --services tohid-task11-service
+
+# Check ALB target health
+aws elbv2 describe-target-health --target-group-arn <target-group-arn>
+
+# Monitor deployment logs
+aws logs describe-log-streams --log-group-name /ecs/tohid-task11-strapi
+```
+
+## 10. Integration with CI/CD
+
+### GitHub Actions Integration
+Add CodeDeploy deployment to your CI/CD pipeline:
+
+```yaml
+- name: Deploy with CodeDeploy
+  run: |
+    aws deploy create-deployment \
+      --application-name tohid-task11-codedeploy-app \
+      --deployment-group-name tohid-task11-deployment-group \
+      --revision revisionType=AppSpecContent,appSpecContent='{
+        "version": 1,
+        "Resources": [{
+          "TargetService": {
+            "Type": "AWS::ECS::Service",
+            "Properties": {
+              "TaskDefinition": "'$TASK_DEFINITION_ARN'",
+              "LoadBalancerInfo": {
+                "ContainerName": "strapi",
+                "ContainerPort": 1337
+              }
+            }
+          }
+        }]
+      }'
+```
+
+### Deployment Automation
+- **Automated Triggers**: Deploy on code changes
+- **Environment Promotion**: Dev → Staging → Production
+- **Rollback Automation**: Automatic rollback on failure
+- **Deployment Validation**: Automated testing and verification
+
+## 11. Production Best Practices
+
+### Security
+- **HTTPS Configuration**: Enable SSL/TLS for production
+- **Security Groups**: Restrict access to necessary ports
+- **IAM Roles**: Least-privilege access for all services
+- **Database Security**: RDS not publicly accessible
+
+### Performance
+- **Auto Scaling**: Configure based on CloudWatch metrics
+- **Resource Optimization**: Right-size CPU and memory
+- **Caching**: Implement application-level caching
+- **CDN Integration**: Use CloudFront for static content
+
+### Monitoring
+- **Comprehensive Logging**: Centralized log management
+- **Alert Configuration**: Proactive issue detection
+- **Performance Tracking**: Monitor key metrics
+- **Cost Optimization**: Track resource utilization
+
+## Notes
+- Blue/Green deployment ensures zero-downtime updates
+- CodeDeploy handles traffic switching automatically
+- Monitor deployment progress through AWS console
+- Test rollback procedures in non-production environments
+- Consider using AWS Systems Manager for deployment automation
+- Implement proper backup strategies for database and content
+- Use CloudWatch alarms for proactive monitoring
+- Regular testing of deployment and rollback procedures is essential
