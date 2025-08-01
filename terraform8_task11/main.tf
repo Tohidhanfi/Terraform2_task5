@@ -244,6 +244,7 @@ resource "aws_ecs_task_definition" "tohid_task" {
 resource "aws_ecs_service" "tohid_service" {
   name            = "tohid-task11-service"
   cluster         = aws_ecs_cluster.tohid_cluster.id
+  task_definition = aws_ecs_task_definition.tohid_task.arn
   desired_count   = 1
   launch_type     = "FARGATE"
 
@@ -265,6 +266,11 @@ resource "aws_ecs_service" "tohid_service" {
   }
 
   depends_on = [aws_lb_listener.main]
+
+  # Ignore task definition changes since CodeDeploy will manage them
+  lifecycle {
+    ignore_changes = [task_definition]
+  }
 }
 
 # CodeDeploy Application
