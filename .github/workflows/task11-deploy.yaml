@@ -62,25 +62,28 @@ jobs:
           # Get the latest task definition ARN
           TASK_DEFINITION_ARN=$(aws ecs describe-task-definition --task-definition tohid-task11 --query 'taskDefinition.taskDefinitionArn' --output text)
           
+          # Create AppSpec content
+          APPSPEC_CONTENT='{
+            "version": 1,
+            "Resources": [{
+              "TargetService": {
+                "Type": "AWS::ECS::Service",
+                "Properties": {
+                  "TaskDefinition": "'$TASK_DEFINITION_ARN'",
+                  "LoadBalancerInfo": {
+                    "ContainerName": "strapi",
+                    "ContainerPort": 1337
+                  }
+                }
+              }
+            }]
+          }'
+          
           # Create CodeDeploy deployment
           aws deploy create-deployment \
             --application-name tohid-task11-codedeploy-app \
             --deployment-group-name tohid-task11-deployment-group \
-            --revision revisionType=AppSpecContent,appSpecContent='{
-              "version": 1,
-              "Resources": [{
-                "TargetService": {
-                  "Type": "AWS::ECS::Service",
-                  "Properties": {
-                    "TaskDefinition": "'$TASK_DEFINITION_ARN'",
-                    "LoadBalancerInfo": {
-                      "ContainerName": "strapi",
-                      "ContainerPort": 1337
-                    }
-                  }
-                }
-              }]
-            }'
+            --revision revisionType=AppSpecContent,appSpecContent="$APPSPEC_CONTENT"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
