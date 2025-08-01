@@ -291,6 +291,11 @@ resource "aws_ecs_service" "tohid_service" {
   }
 
   depends_on = [aws_lb_listener.main]
+
+  # Ignore task definition changes since CodeDeploy manages them
+  lifecycle {
+    ignore_changes = [task_definition]
+  }
 }
 
 # CodeDeploy Application
