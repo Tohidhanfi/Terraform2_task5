@@ -12,7 +12,7 @@ resource "aws_cloudwatch_dashboard" "strapi_dashboard" {
         height = 6
         properties = {
           metrics = [
-            ["AWS/ECS", "CPUUtilization", "ServiceName", aws_ecs_service.main.name, "ClusterName", aws_ecs_cluster.main.name],
+            ["AWS/ECS", "CPUUtilization", "ServiceName", aws_ecs_service.tohid_service.name, "ClusterName", aws_ecs_cluster.tohid_cluster.name],
             [".", "MemoryUtilization", ".", ".", ".", "."]
           ]
           period = 300
@@ -29,7 +29,7 @@ resource "aws_cloudwatch_dashboard" "strapi_dashboard" {
         height = 6
         properties = {
           metrics = [
-            ["AWS/ECS", "RunningTaskCount", "ServiceName", aws_ecs_service.main.name, "ClusterName", aws_ecs_cluster.main.name],
+            ["AWS/ECS", "RunningTaskCount", "ServiceName", aws_ecs_service.tohid_service.name, "ClusterName", aws_ecs_cluster.tohid_cluster.name],
             [".", "PendingTaskCount", ".", ".", ".", "."]
           ]
           period = 300
@@ -46,7 +46,7 @@ resource "aws_cloudwatch_dashboard" "strapi_dashboard" {
         height = 6
         properties = {
           metrics = [
-            ["AWS/ECS", "NetworkRxBytes", "ServiceName", aws_ecs_service.main.name, "ClusterName", aws_ecs_cluster.main.name],
+            ["AWS/ECS", "NetworkRxBytes", "ServiceName", aws_ecs_service.tohid_service.name, "ClusterName", aws_ecs_cluster.tohid_cluster.name],
             [".", "NetworkTxBytes", ".", ".", ".", "."]
           ]
           period = 300
@@ -63,7 +63,7 @@ resource "aws_cloudwatch_dashboard" "strapi_dashboard" {
         height = 6
         properties = {
           metrics = [
-            ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", aws_lb.main.arn_suffix, "TargetGroup", aws_lb_target_group.blue.arn_suffix],
+            ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", aws_lb.tohid_alb.arn_suffix, "TargetGroup", aws_lb_target_group.blue.arn_suffix],
             [".", "RequestCount", ".", ".", ".", "."]
           ]
           period = 300
@@ -80,7 +80,7 @@ resource "aws_cloudwatch_dashboard" "strapi_dashboard" {
         height = 6
         properties = {
           metrics = [
-            ["AWS/ApplicationELB", "HTTPCode_Target_2XX_Count", "LoadBalancer", aws_lb.main.arn_suffix, "TargetGroup", aws_lb_target_group.blue.arn_suffix],
+            ["AWS/ApplicationELB", "HTTPCode_Target_2XX_Count", "LoadBalancer", aws_lb.tohid_alb.arn_suffix, "TargetGroup", aws_lb_target_group.blue.arn_suffix],
             [".", "HTTPCode_Target_4XX_Count", ".", ".", ".", "."],
             [".", "HTTPCode_Target_5XX_Count", ".", ".", ".", "."]
           ]
@@ -98,7 +98,7 @@ resource "aws_cloudwatch_dashboard" "strapi_dashboard" {
         height = 6
         properties = {
           metrics = [
-            ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", aws_db_instance.main.id],
+            ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", aws_db_instance.tohid_rds.id],
             [".", "DatabaseConnections", ".", "."],
             [".", "FreeableMemory", ".", "."]
           ]
@@ -128,8 +128,8 @@ resource "aws_cloudwatch_metric_alarm" "ecs_cpu_high" {
   alarm_actions       = []
 
   dimensions = {
-    ServiceName = aws_ecs_service.main.name
-    ClusterName = aws_ecs_cluster.main.name
+    ServiceName = aws_ecs_service.tohid_service.name
+    ClusterName = aws_ecs_cluster.tohid_cluster.name
   }
 }
 
@@ -147,8 +147,8 @@ resource "aws_cloudwatch_metric_alarm" "ecs_memory_high" {
   alarm_actions       = []
 
   dimensions = {
-    ServiceName = aws_ecs_service.main.name
-    ClusterName = aws_ecs_cluster.main.name
+    ServiceName = aws_ecs_service.tohid_service.name
+    ClusterName = aws_ecs_cluster.tohid_cluster.name
   }
 }
 
@@ -166,8 +166,8 @@ resource "aws_cloudwatch_metric_alarm" "ecs_task_count" {
   alarm_actions       = []
 
   dimensions = {
-    ServiceName = aws_ecs_service.main.name
-    ClusterName = aws_ecs_cluster.main.name
+    ServiceName = aws_ecs_service.tohid_service.name
+    ClusterName = aws_ecs_cluster.tohid_cluster.name
   }
 }
 
@@ -185,7 +185,7 @@ resource "aws_cloudwatch_metric_alarm" "alb_response_time" {
   alarm_actions       = []
 
   dimensions = {
-    LoadBalancer = aws_lb.main.arn_suffix
+    LoadBalancer = aws_lb.tohid_alb.arn_suffix
     TargetGroup  = aws_lb_target_group.blue.arn_suffix
   }
 }
@@ -204,7 +204,7 @@ resource "aws_cloudwatch_metric_alarm" "alb_5xx_errors" {
   alarm_actions       = []
 
   dimensions = {
-    LoadBalancer = aws_lb.main.arn_suffix
+    LoadBalancer = aws_lb.tohid_alb.arn_suffix
     TargetGroup  = aws_lb_target_group.blue.arn_suffix
   }
 }
@@ -223,7 +223,7 @@ resource "aws_cloudwatch_metric_alarm" "rds_cpu_high" {
   alarm_actions       = []
 
   dimensions = {
-    DBInstanceIdentifier = aws_db_instance.main.id
+    DBInstanceIdentifier = aws_db_instance.tohid_rds.id
   }
 }
 
@@ -241,7 +241,7 @@ resource "aws_cloudwatch_metric_alarm" "rds_connections" {
   alarm_actions       = []
 
   dimensions = {
-    DBInstanceIdentifier = aws_db_instance.main.id
+    DBInstanceIdentifier = aws_db_instance.tohid_rds.id
   }
 }
 
@@ -259,7 +259,7 @@ resource "aws_cloudwatch_metric_alarm" "application_health" {
   alarm_actions       = []
 
   dimensions = {
-    LoadBalancer = aws_lb.main.arn_suffix
+    LoadBalancer = aws_lb.tohid_alb.arn_suffix
     TargetGroup  = aws_lb_target_group.blue.arn_suffix
   }
 } 

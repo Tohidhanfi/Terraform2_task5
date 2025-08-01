@@ -81,12 +81,12 @@ resource "aws_security_group" "ecs_sg" {
 }
 
 # Application Load Balancer
-resource "aws_lb" "main" {
+resource "aws_lb" "tohid_alb" {
   name               = "tohid-task11-alb"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
-  subnets            = data.aws_subnets.default.ids
+  subnets            = ["subnet-0c0bb5df2571165a9", "subnet-0cc2ddb32492bcc41", "subnet-0f768008c6324831f"]
 
   enable_deletion_protection = false
 
@@ -155,7 +155,7 @@ resource "aws_lb_listener" "main" {
 }
 
 # ECS Cluster
-resource "aws_ecs_cluster" "main" {
+resource "aws_ecs_cluster" "tohid_cluster" {
   name = "tohid-task11-cluster"
 
   setting {
@@ -192,7 +192,7 @@ resource "aws_iam_role_policy_attachment" "ecs_execution_policy" {
 }
 
 # ECS Task Definition (Placeholder)
-resource "aws_ecs_task_definition" "main" {
+resource "aws_ecs_task_definition" "tohid_task" {
   family                   = "tohid-task11"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
@@ -222,7 +222,7 @@ resource "aws_ecs_task_definition" "main" {
       }
       environment = [
         { name = "DATABASE_CLIENT", value = "postgres" },
-        { name = "DATABASE_HOST", value = aws_db_instance.main.address },
+        { name = "DATABASE_HOST", value = aws_db_instance.tohid_rds.address },
         { name = "DATABASE_PORT", value = "5432" },
         { name = "DATABASE_NAME", value = "strapidb" },
         { name = "DATABASE_USERNAME", value = "tohid" },
@@ -241,15 +241,15 @@ resource "aws_ecs_task_definition" "main" {
 }
 
 # ECS Service
-resource "aws_ecs_service" "main" {
+resource "aws_ecs_service" "tohid_service" {
   name            = "tohid-task11-service"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.main.arn
+  cluster         = aws_ecs_cluster.tohid_cluster.id
+  task_definition = aws_ecs_task_definition.tohid_task.arn
   desired_count   = 1
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets         = data.aws_subnets.default.ids
+    subnets         = ["subnet-0c0bb5df2571165a9", "subnet-0cc2ddb32492bcc41", "subnet-0f768008c6324831f"]
     security_groups = [aws_security_group.ecs_sg.id]
     assign_public_ip = true
   }
@@ -287,8 +287,8 @@ resource "aws_codedeploy_deployment_group" "main" {
   }
 
   ecs_service {
-    cluster_name = aws_ecs_cluster.main.name
-    service_name = aws_ecs_service.main.name
+    cluster_name = aws_ecs_cluster.tohid_cluster.name
+    service_name = aws_ecs_service.tohid_service.name
   }
 
   load_balancer_info {
@@ -332,6 +332,6 @@ resource "aws_iam_role" "codedeploy_service_role" {
 }
 
 resource "aws_iam_role_policy_attachment" "codedeploy_service_role_policy" {
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRoleForECS"
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
   role       = aws_iam_role.codedeploy_service_role.name
 }
