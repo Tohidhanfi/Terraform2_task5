@@ -82,8 +82,37 @@ jobs:
           WAIT_TIME=0
           SLEEP_INTERVAL=30
           
+          # Get the security group ID for our RDS security group
+          RDS_SG_ID=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=tohid-task12-rds-sg" --query 'SecurityGroups[0].GroupId' --output text 2>/dev/null || echo "")
+          
+          if [ -z "$RDS_SG_ID" ] || [ "$RDS_SG_ID" = "None" ]; then
+            echo "RDS security group not found. Listing all security groups:"
+            aws ec2 describe-security-groups --query 'SecurityGroups[].{Name:GroupName,ID:GroupId}' --output table
+            exit 1
+          fi
+          
+          echo "Found RDS security group: $RDS_SG_ID"
+          
+          # Get the RDS instance identifier by searching for instances associated with our security group
+          RDS_INSTANCE_ID=$(aws rds describe-db-instances --query "DBInstances[?contains(VpcSecurityGroups[0].VpcSecurityGroupId, '$RDS_SG_ID')].DBInstanceIdentifier" --output text 2>/dev/null | head -1)
+          
+          if [ -z "$RDS_INSTANCE_ID" ] || [ "$RDS_INSTANCE_ID" = "None" ]; then
+            echo "No RDS instance found associated with security group $RDS_SG_ID"
+            echo "Listing all RDS instances:"
+            aws rds describe-db-instances --query 'DBInstances[].{Identifier:DBInstanceIdentifier,Status:DBInstanceStatus,SecurityGroups:VpcSecurityGroups[0].VpcSecurityGroupId}' --output table
+            echo "Trying to find any RDS instance..."
+            RDS_INSTANCE_ID=$(aws rds describe-db-instances --query 'DBInstances[0].DBInstanceIdentifier' --output text 2>/dev/null || echo "")
+          fi
+          
+          if [ -z "$RDS_INSTANCE_ID" ] || [ "$RDS_INSTANCE_ID" = "None" ]; then
+            echo "No RDS instances found at all. Skipping RDS wait."
+            exit 0
+          fi
+          
+          echo "Found RDS instance: $RDS_INSTANCE_ID"
+          
           while [ $WAIT_TIME -lt $MAX_WAIT_TIME ]; do
-            RDS_STATUS=$(aws rds describe-db-instances --db-instance-identifier tohid-task12-rds-instance --query 'DBInstances[0].DBInstanceStatus' --output text 2>/dev/null || echo "NOT_FOUND")
+            RDS_STATUS=$(aws rds describe-db-instances --db-instance-identifier $RDS_INSTANCE_ID --query 'DBInstances[0].DBInstanceStatus' --output text 2>/dev/null || echo "NOT_FOUND")
             
             echo "RDS Status: $RDS_STATUS (waited ${WAIT_TIME}s)"
             
