@@ -1589,3 +1589,282 @@ Add CodeDeploy deployment to your CI/CD pipeline:
 - Implement proper backup strategies for database and content
 - Use CloudWatch alarms for proactive monitoring
 - Regular testing of deployment and rollback procedures is essential
+
+---
+
+# TASK 12 – GitHub Actions Workflow for ECS Deployment with CodeDeploy
+
+This task implements a comprehensive GitHub Actions workflow for deploying Strapi to Amazon ECS with enhanced features including ECR image push, dynamic ECS task definition updates, AWS CodeDeploy deployment, and automatic rollback capabilities.
+
+## Overview
+- **ECR Image Push**: Builds and pushes Docker images tagged with GitHub commit SHA
+- **Dynamic Task Definition**: Updates ECS task definitions with new image tags
+- **CodeDeploy Integration**: Automated deployment with blue/green strategy
+- **Deployment Monitoring**: Real-time monitoring with automatic rollback
+- **Resource Waiting**: Comprehensive waiting mechanisms for AWS resource creation
+
+## Key Features
+
+### Automated Deployment Pipeline
+- **Image Build & Push**: Docker image built and pushed to ECR with SHA tagging
+- **Infrastructure Deployment**: Terraform manages all AWS resources
+- **Task Definition Update**: Dynamic updates with new image URLs
+- **CodeDeploy Deployment**: Blue/green deployment with traffic switching
+- **Health Monitoring**: Real-time deployment status tracking
+
+### Resource Creation Waiting
+- **RDS Availability**: Waits up to 15 minutes for database readiness
+- **ALB Activation**: Waits up to 10 minutes for load balancer activation
+- **ECS Service Readiness**: Waits up to 10 minutes for service stability
+- **Target Group Health**: Waits up to 10 minutes for health checks
+- **CodeDeploy Start**: Waits up to 5 minutes for deployment initiation
+
+### Monitoring & Rollback
+- **Deployment Monitoring**: 30-minute monitoring with status tracking
+- **Automatic Rollback**: Triggers on deployment failure or timeout
+- **Health Verification**: Application endpoint testing
+- **CloudWatch Integration**: Alarm monitoring and metrics collection
+
+## Prerequisites
+- Completed Task 11 (Blue/Green deployment setup)
+- AWS account with permissions for ECS, CodeDeploy, ECR, ALB, RDS, and IAM
+- GitHub repository with configured secrets
+- Terraform installed locally
+
+## 1. Infrastructure Components
+
+### Updated Resources (Task11 → Task12)
+All AWS resources have been updated with new naming convention:
+
+- **ECS Cluster**: `tohid-task12-cluster`
+- **ECS Service**: `tohid-task12-service`
+- **ALB**: `tohid-task12-alb`
+- **Target Groups**: `tohid-task12-blue-tg`, `tohid-task12-green-tg`
+- **CodeDeploy App**: `tohid-task12-codedeploy-app`
+- **CodeDeploy Deployment Group**: `tohid-task12-deployment-group`
+- **Security Groups**: `tohid-task12-alb-sg`, `tohid-task12-ecs-sg`, `tohid-task12-rds-sg`
+- **RDS**: `tohid-task12-rds-instance`
+- **CloudWatch Dashboard**: `Strapi-task12-ECS-Dashboard`
+- **CloudWatch Alarms**: All prefixed with `strapi-task12-`
+
+### GitHub Actions Workflow
+- **File**: `.github/workflows/task12-deploy.yaml`
+- **Triggers**: Push to main/master OR manual dispatch
+- **Jobs**: Deploy, Monitor, Rollback (conditional execution)
+
+## 2. Deployment Process
+
+### 1. **Image Build & Push**
+```bash
+# Build Docker image with commit SHA tag
+docker build -t strapi-app-tohid:${{ github.sha }} ./strapi-app
+docker tag strapi-app-tohid:${{ github.sha }} $ECR_REGISTRY/strapi-app-tohid:${{ github.sha }}
+docker push $ECR_REGISTRY/strapi-app-tohid:${{ github.sha }}
+```
+
+### 2. **Infrastructure Deployment**
+```bash
+# Apply Terraform configuration
+terraform apply -auto-approve -var="ecr_image_url=$IMAGE_URL"
+```
+
+### 3. **Resource Creation Waiting**
+The workflow includes comprehensive waiting mechanisms for all critical resources:
+
+#### **RDS Instance Availability**
+- Waits up to 15 minutes for RDS instance to be "available"
+- Monitors DB instance status
+- Fails if instance is being deleted
+
+#### **ALB Activation**
+- Waits up to 10 minutes for ALB to be "active"
+- Monitors load balancer state
+- Ensures ALB is ready to receive traffic
+
+#### **ECS Service Readiness**
+- Waits up to 10 minutes for ECS service to be "ACTIVE"
+- Monitors running task count vs desired count
+- Ensures all tasks are running
+
+#### **Target Group Health**
+- Waits up to 10 minutes for target group to be healthy
+- Monitors healthy target count
+- Ensures application is responding to health checks
+
+#### **CodeDeploy Deployment Start**
+- Waits up to 5 minutes for CodeDeploy deployment to start
+- Monitors deployment status transitions
+- Ensures deployment is progressing
+
+### 4. **Task Definition Update**
+```bash
+# Get current task definition
+TASK_DEF_ARN=$(aws ecs describe-services --cluster $ECS_CLUSTER --services $ECS_SERVICE --query 'services[0].taskDefinition' --output text)
+
+# Update container image
+UPDATED_TASK_DEF=$(echo $TASK_DEF | jq --arg IMAGE_URL "$IMAGE_URL" '.containerDefinitions[0].image = $IMAGE_URL')
+
+# Register new task definition
+NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json "$UPDATED_TASK_DEF" --query 'taskDefinition.taskDefinitionArn' --output text)
+```
+
+### 5. **CodeDeploy Deployment**
+```json
+{
+  "version": 0.0,
+  "Resources": [
+    {
+      "TargetService": {
+        "Type": "AWS::ECS::Service",
+        "Properties": {
+          "TaskDefinition": "NEW_TASK_DEF_ARN",
+          "LoadBalancerInfo": {
+            "ContainerName": "strapi",
+            "ContainerPort": 1337
+          }
+        }
+      }
+    }
+  ]
+}
+```
+
+## 3. Monitoring & Rollback
+
+### Deployment Monitoring
+- Monitors deployment status every 30 seconds
+- Maximum wait time: 30 minutes
+- Status tracking: InProgress → Ready → Succeeded/Failed
+
+### Automatic Rollback
+- Triggers on deployment failure or timeout
+- Reverts to previous task definition
+- Creates new CodeDeploy deployment for rollback
+- Monitors rollback progress
+
+### Health Checks
+- CloudWatch alarms monitoring
+- Application endpoint testing
+- ECS service status verification
+
+## 4. Usage
+
+### Automatic Deployment
+Push to main/master branch to trigger automatic deployment:
+```bash
+git push origin main
+```
+
+### Manual Deployment
+1. Go to GitHub Actions tab
+2. Select "Deploy Strapi to ECS with CodeDeploy" workflow
+3. Click "Run workflow"
+4. Select "deploy" action and click "Run workflow"
+
+### Manual Monitoring
+1. Go to GitHub Actions tab
+2. Select "Deploy Strapi to ECS with CodeDeploy" workflow
+3. Click "Run workflow"
+4. Select "monitor" action, enter deployment ID, and click "Run workflow"
+
+### Manual Rollback
+1. Go to GitHub Actions tab
+2. Select "Deploy Strapi to ECS with CodeDeploy" workflow
+3. Click "Run workflow"
+4. Select "rollback" action, enter deployment ID, and click "Run workflow"
+
+## 5. Environment Variables
+
+The workflow uses the following environment variables:
+- `AWS_REGION`: us-east-2
+- `ECR_REPOSITORY`: strapi-app-tohid
+- `ECR_REGISTRY`: 607700977843.dkr.ecr.us-east-2.amazonaws.com
+- `ECS_CLUSTER`: tohid-task12-cluster
+- `ECS_SERVICE`: tohid-task12-service
+- `CODEPLOY_APP`: tohid-task12-codedeploy-app
+- `CODEPLOY_DEPLOYMENT_GROUP`: tohid-task12-deployment-group
+
+## 6. Required Secrets
+
+The following GitHub secrets must be configured:
+- `AWS_ACCESS_KEY_ID`: AWS access key
+- `AWS_SECRET_ACCESS_KEY`: AWS secret key
+
+## 7. Benefits
+
+1. **Traceability**: Each deployment is tagged with commit SHA
+2. **Reliability**: Automatic rollback on failure
+3. **Monitoring**: Real-time deployment status tracking
+4. **Blue/Green**: Zero-downtime deployments
+5. **Infrastructure as Code**: Terraform manages all resources
+6. **Observability**: CloudWatch monitoring and alarms
+7. **Resource Safety**: Comprehensive waiting for resource creation
+
+## 8. Troubleshooting
+
+### Common Issues
+
+1. **Deployment Timeout**
+   - Check ECS service events
+   - Verify task definition compatibility
+   - Check CloudWatch logs
+
+2. **Rollback Issues**
+   - Ensure previous task definition exists
+   - Check CodeDeploy service role permissions
+   - Verify target group health
+
+3. **Image Push Failures**
+   - Verify ECR repository exists
+   - Check AWS credentials
+   - Ensure Docker build succeeds
+
+4. **Resource Creation Delays**
+   - Monitor AWS service status
+   - Check resource quotas
+   - Verify network connectivity
+
+### Debugging Commands
+
+```bash
+# Check ECS service status
+aws ecs describe-services --cluster tohid-task12-cluster --services tohid-task12-service
+
+# Check deployment status
+aws deploy get-deployment --deployment-id DEPLOYMENT_ID
+
+# Check CloudWatch alarms
+aws cloudwatch describe-alarms --alarm-name-prefix "strapi-task12"
+
+# Test application health
+curl -f http://ALB_DNS/admin
+
+# View recent ECS events
+aws ecs describe-services --cluster tohid-task12-cluster --services tohid-task12-service --query 'services[0].events[:5]'
+```
+
+## 9. Complete Workflow Sequence
+
+```
+1. Build & Push Docker Image
+2. Terraform Apply (Infrastructure)
+3. Wait for RDS to be Available (15 min)
+4. Wait for ALB to be Active (10 min)
+5. Wait for ECS Service to be Ready (10 min)
+6. Wait for Target Group to be Healthy (10 min)
+7. Update ECS Task Definition
+8. Create CodeDeploy Deployment
+9. Wait for CodeDeploy to Start (5 min)
+10. Monitor Deployment Status (30 min)
+11. Rollback on Failure (if needed)
+```
+
+## Notes
+- All infrastructure components updated to task12 naming convention
+- Comprehensive waiting mechanisms prevent resource conflicts
+- Single workflow file handles deploy, monitor, and rollback actions
+- Automatic rollback ensures deployment reliability
+- Resource creation waiting prevents premature deployment attempts
+- GitHub Actions provides complete CI/CD automation
+- CloudWatch integration enables comprehensive monitoring
+- Blue/green deployment strategy ensures zero-downtime updates

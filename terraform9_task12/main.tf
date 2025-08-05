@@ -1,7 +1,7 @@
 terraform {
   backend "s3" {
     bucket         = "strapi-tf-s3"
-    key            = "terraform8_task11/terraform.tfstate"
+    key            = "terraform9_task12/terraform.tfstate"
     region         = "us-east-2"
     use_lockfile   = true
     encrypt        = true
@@ -26,7 +26,7 @@ data "aws_subnets" "default" {
 
 # Security Groups
 resource "aws_security_group" "alb_sg" {
-  name        = "tohid-task11-alb-sg"
+  name        = "tohid-task12-alb-sg"
   description = "Security group for ALB"
   vpc_id      = data.aws_vpc.default.id
 
@@ -52,12 +52,12 @@ resource "aws_security_group" "alb_sg" {
   }
 
   tags = {
-    Name = "tohid-task11-alb-sg"
+    Name = "tohid-task12-alb-sg"
   }
 }
 
 resource "aws_security_group" "ecs_sg" {
-  name        = "tohid-task11-ecs-sg"
+  name        = "tohid-task12-ecs-sg"
   description = "Security group for ECS tasks"
   vpc_id      = data.aws_vpc.default.id
 
@@ -76,12 +76,12 @@ resource "aws_security_group" "ecs_sg" {
   }
 
   tags = {
-    Name = "tohid-task11-ecs-sg"
+    Name = "tohid-task12-ecs-sg"
   }
 }
 
 resource "aws_security_group" "rds_sg" {
-  name        = "tohid-task11-rds-sg"
+  name        = "tohid-task12-rds-sg"
   description = "Security group for RDS instance"
   vpc_id      = data.aws_vpc.default.id
 
@@ -100,13 +100,13 @@ resource "aws_security_group" "rds_sg" {
   }
 
   tags = {
-    Name = "tohid-task11-rds-sg"
+    Name = "tohid-task12-rds-sg"
   }
 }
 
 # Application Load Balancer
 resource "aws_lb" "tohid_alb" {
-  name               = "tohid-task11-alb"
+  name               = "tohid-task12-alb"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
@@ -115,13 +115,13 @@ resource "aws_lb" "tohid_alb" {
   enable_deletion_protection = false
 
   tags = {
-    Name = "tohid-task11-alb"
+    Name = "tohid-task12-alb"
   }
 }
 
 # Target Groups (Blue and Green)
 resource "aws_lb_target_group" "blue" {
-  name        = "tohid-task11-blue-tg"
+  name        = "tohid-task12-blue-tg"
   port        = 1337
   protocol    = "HTTP"
   vpc_id      = data.aws_vpc.default.id
@@ -139,12 +139,12 @@ resource "aws_lb_target_group" "blue" {
   }
 
   tags = {
-    Name = "tohid-task11-blue-tg"
+    Name = "tohid-task12-blue-tg"
   }
 }
 
 resource "aws_lb_target_group" "green" {
-  name        = "tohid-task11-green-tg"
+  name        = "tohid-task12-green-tg"
   port        = 1337
   protocol    = "HTTP"
   vpc_id      = data.aws_vpc.default.id
@@ -162,7 +162,7 @@ resource "aws_lb_target_group" "green" {
   }
 
   tags = {
-    Name = "tohid-task11-green-tg"
+    Name = "tohid-task12-green-tg"
   }
 }
 
@@ -180,7 +180,7 @@ resource "aws_lb_listener" "main" {
 
 # ECS Cluster
 resource "aws_ecs_cluster" "tohid_cluster" {
-  name = "tohid-task11-cluster"
+  name = "tohid-task12-cluster"
 
   setting {
     name  = "containerInsights"
@@ -190,13 +190,13 @@ resource "aws_ecs_cluster" "tohid_cluster" {
 
 # CloudWatch Log Group
 resource "aws_cloudwatch_log_group" "strapi" {
-  name              = "/ecs/tohid-task11-strapi"
+  name              = "/ecs/tohid-task12-strapi"
   retention_in_days = 7
 }
 
 # IAM Roles
 resource "aws_iam_role" "ecs_task_execution_role" {
-  name = "ecsTaskExecutionRole-tohid-task11"
+  name = "ecsTaskExecutionRole-tohid-task12"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -217,7 +217,7 @@ resource "aws_iam_role_policy_attachment" "ecs_execution_policy" {
 
 # ECS Task Definition (Placeholder)
 resource "aws_ecs_task_definition" "tohid_task" {
-  family                   = "tohid-task11"
+  family                   = "tohid-task12"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = "512"
@@ -240,7 +240,7 @@ resource "aws_ecs_task_definition" "tohid_task" {
       logConfiguration = {
         logDriver = "awslogs",
         options = {
-          awslogs-group         = "/ecs/tohid-task11-strapi",
+          awslogs-group         = "/ecs/tohid-task12-strapi",
           awslogs-region        = "us-east-2",
           awslogs-stream-prefix = "ecs"
         }
@@ -267,7 +267,7 @@ resource "aws_ecs_task_definition" "tohid_task" {
 
 # ECS Service
 resource "aws_ecs_service" "tohid_service" {
-  name            = "tohid-task11-service"
+  name            = "tohid-task12-service"
   cluster         = aws_ecs_cluster.tohid_cluster.id
   task_definition = aws_ecs_task_definition.tohid_task.arn_without_revision
   desired_count   = 1
@@ -300,14 +300,14 @@ resource "aws_ecs_service" "tohid_service" {
 
 # CodeDeploy Application
 resource "aws_codedeploy_app" "main" {
-  name             = "tohid-task11-codedeploy-app"
+  name             = "tohid-task12-codedeploy-app"
   compute_platform = "ECS"
 }
 
 # CodeDeploy Deployment Group
 resource "aws_codedeploy_deployment_group" "main" {
   app_name               = aws_codedeploy_app.main.name
-  deployment_group_name  = "tohid-task11-deployment-group"
+  deployment_group_name  = "tohid-task12-deployment-group"
   deployment_config_name = "CodeDeployDefault.ECSCanary10Percent5Minutes"
   service_role_arn       = aws_iam_role.codedeploy_service_role.arn
 
@@ -358,7 +358,7 @@ resource "aws_codedeploy_deployment_group" "main" {
 
 # IAM Role for CodeDeploy
 resource "aws_iam_role" "codedeploy_service_role" {
-  name = "CodeDeployServiceRole-tohid-task11"
+  name = "CodeDeployServiceRole-tohid-task12"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
