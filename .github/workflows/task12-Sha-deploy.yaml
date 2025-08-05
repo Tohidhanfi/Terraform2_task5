@@ -312,6 +312,23 @@ jobs:
               break
             elif [ "$STATUS" = "Failed" ] || [ "$STATUS" = "Stopped" ]; then
               echo "CodeDeploy deployment failed to start: $STATUS"
+              
+              # Get detailed deployment information
+              echo "=== Deployment Details ==="
+              aws deploy get-deployment --deployment-id $DEPLOYMENT_ID --query 'deploymentInfo' --output table
+              
+              # Get deployment events
+              echo "=== Deployment Events ==="
+              aws deploy get-deployment --deployment-id $DEPLOYMENT_ID --query 'deploymentInfo.deploymentOverview' --output table
+              
+              # Check ECS service status
+              echo "=== ECS Service Status ==="
+              aws ecs describe-services --cluster $ECS_CLUSTER --services $ECS_SERVICE --query 'services[0].{Status:status,RunningCount:runningCount,DesiredCount:desiredCount,PendingCount:pendingCount}' --output table
+              
+              # Check recent ECS events
+              echo "=== Recent ECS Events ==="
+              aws ecs describe-services --cluster $ECS_CLUSTER --services $ECS_SERVICE --query 'services[0].events[:3]' --output table
+              
               exit 1
             fi
             
