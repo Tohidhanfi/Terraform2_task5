@@ -283,10 +283,12 @@ jobs:
               "content": $content
             }
           }' > revision.json
-          DEPLOYMENT_ID=$(aws deploy create-deployment \
+          DEPLOYMENT_RESPONSE=$(aws deploy create-deployment \
             --application-name $CODEPLOY_APP \
             --deployment-group-name $CODEPLOY_DEPLOYMENT_GROUP \
             --revision file://revision.json)
+          
+          DEPLOYMENT_ID=$(echo $DEPLOYMENT_RESPONSE | jq -r '.deploymentId')
           
           echo "deployment_id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
           echo "Created deployment: $DEPLOYMENT_ID"
