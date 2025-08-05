@@ -226,11 +226,26 @@ jobs:
           # Get current task definition
           TASK_DEF_ARN=$(aws ecs describe-services --cluster $ECS_CLUSTER --services $ECS_SERVICE --query 'services[0].taskDefinition' --output text)
           
-          # Get task definition details
+          # Get task definition details and filter out metadata fields
           TASK_DEF=$(aws ecs describe-task-definition --task-definition $TASK_DEF_ARN --query 'taskDefinition' --output json)
           
+          # Create a clean task definition for registration (remove metadata fields)
+          CLEAN_TASK_DEF=$(echo $TASK_DEF | jq '{
+            family: .family,
+            taskRoleArn: .taskRoleArn,
+            executionRoleArn: .executionRoleArn,
+            networkMode: .networkMode,
+            containerDefinitions: .containerDefinitions,
+            volumes: .volumes,
+            placementConstraints: .placementConstraints,
+            requiresCompatibilities: .requiresCompatibilities,
+            cpu: .cpu,
+            memory: .memory,
+            tags: .tags
+          }')
+          
           # Update container image
-          UPDATED_TASK_DEF=$(echo $TASK_DEF | jq --arg IMAGE_URL "${{ steps.build-image.outputs.image_url }}" '.containerDefinitions[0].image = $IMAGE_URL')
+          UPDATED_TASK_DEF=$(echo $CLEAN_TASK_DEF | jq --arg IMAGE_URL "${{ steps.build-image.outputs.image_url }}" '.containerDefinitions[0].image = $IMAGE_URL')
           
           # Register new task definition
           NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json "$UPDATED_TASK_DEF" --query 'taskDefinition.taskDefinitionArn' --output text)
