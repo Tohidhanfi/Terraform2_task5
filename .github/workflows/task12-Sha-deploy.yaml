@@ -276,11 +276,12 @@ jobs:
           }
           EOF
           
-          # Create deployment
+          # Create deployment with properly escaped JSON
+          APPSPEC_CONTENT=$(cat appspec.json | jq -c .)
           DEPLOYMENT_ID=$(aws deploy create-deployment \
             --application-name $CODEPLOY_APP \
             --deployment-group-name $CODEPLOY_DEPLOYMENT_GROUP \
-            --revision revisionType=AppSpecContent,appSpecContent='{"content": "'$(cat appspec.json | jq -c .)'"}')
+            --revision "revisionType=AppSpecContent,appSpecContent={\"content\":\"$APPSPEC_CONTENT\"}")
           
           echo "deployment_id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
           echo "Created deployment: $DEPLOYMENT_ID"
