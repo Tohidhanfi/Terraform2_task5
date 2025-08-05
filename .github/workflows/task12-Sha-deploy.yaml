@@ -229,7 +229,7 @@ jobs:
           # Get task definition details and filter out metadata fields
           TASK_DEF=$(aws ecs describe-task-definition --task-definition $TASK_DEF_ARN --query 'taskDefinition' --output json)
           
-          # Create a clean task definition for registration (remove metadata fields)
+          # Create a clean task definition for registration (remove metadata fields and handle null tags)
           CLEAN_TASK_DEF=$(echo $TASK_DEF | jq '{
             family: .family,
             taskRoleArn: .taskRoleArn,
@@ -240,9 +240,8 @@ jobs:
             placementConstraints: .placementConstraints,
             requiresCompatibilities: .requiresCompatibilities,
             cpu: .cpu,
-            memory: .memory,
-            tags: .tags
-          }')
+            memory: .memory
+          } + (if .tags then {tags: .tags} else {} end)')
           
           # Update container image
           UPDATED_TASK_DEF=$(echo $CLEAN_TASK_DEF | jq --arg IMAGE_URL "${{ steps.build-image.outputs.image_url }}" '.containerDefinitions[0].image = $IMAGE_URL')
