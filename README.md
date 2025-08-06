@@ -1843,7 +1843,7 @@ curl -f http://ALB_DNS/admin
 aws ecs describe-services --cluster tohid-task12-cluster --services tohid-task12-service --query 'services[0].events[:5]'
 ```
 
-## 9. Complete Workflow Sequence
+## 9.Complete Workflow Sequence
 
 ```
 1. Build & Push Docker Image
