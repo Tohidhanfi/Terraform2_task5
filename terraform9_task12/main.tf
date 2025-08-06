@@ -128,18 +128,12 @@ resource "aws_lb_target_group" "blue" {
   target_type = "ip"
 
   health_check {
-    path                = "/"
-    port                = "1337"
-    protocol            = "HTTP"
-    matcher             = "200,302"
+    path                = "/admin"
     interval            = 30
     timeout             = 5
     healthy_threshold   = 2
     unhealthy_threshold = 2
-  }
-
-  tags = {
-    Name = "tohid-task12-blue-tg"
+    matcher             = "200-299"
   }
 }
 
@@ -151,18 +145,12 @@ resource "aws_lb_target_group" "green" {
   target_type = "ip"
 
   health_check {
-    path                = "/"
-    port                = "1337"
-    protocol            = "HTTP"
-    matcher             = "200,302"
+    path                = "/admin"
     interval            = 30
     timeout             = 5
     healthy_threshold   = 2
     unhealthy_threshold = 2
-  }
-
-  tags = {
-    Name = "tohid-task12-green-tg"
+    matcher             = "200-299"
   }
 }
 
@@ -308,8 +296,8 @@ resource "aws_codedeploy_app" "main" {
 resource "aws_codedeploy_deployment_group" "main" {
   app_name               = aws_codedeploy_app.main.name
   deployment_group_name  = "tohid-task12-deployment-group"
-  deployment_config_name = "CodeDeployDefault.ECSCanary10Percent5Minutes"
   service_role_arn       = aws_iam_role.codedeploy_role.arn
+  deployment_config_name = "CodeDeployDefault.ECSCanary10Percent5Minutes"
 
   deployment_style {
     deployment_type = "BLUE_GREEN"
@@ -353,7 +341,7 @@ resource "aws_codedeploy_deployment_group" "main" {
     }
   }
 
-  depends_on = [aws_iam_role_policy_attachment.codedeploy_service_role_policy]
+  depends_on = [aws_iam_role_policy_attachment.codedeploy_role_policy]
 }
 
 # IAM Role for CodeDeploy
@@ -474,40 +462,6 @@ resource "aws_iam_role" "codedeploy_role" {
 
 resource "aws_iam_role_policy_attachment" "codedeploy_role_policy" {
   role       = aws_iam_role.codedeploy_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
+  policy_arn = "arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS"
 }
 
-resource "aws_iam_role_policy" "codedeploy_ecs_permissions" {
-  name = "codedeploy-ecs-permissions"
-  role = aws_iam_role.codedeploy_role.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "ecs:DescribeServices",
-          "ecs:DescribeTaskDefinition",
-          "ecs:UpdateService",
-          "ecs:CreateTaskSet",
-          "ecs:DeleteTaskSet",
-          "ecs:UpdateServicePrimaryTaskSet",
-          "elasticloadbalancing:DescribeTargetGroups",
-          "elasticloadbalancing:DescribeListeners",
-          "elasticloadbalancing:DescribeRules",
-          "elasticloadbalancing:RegisterTargets",
-          "elasticloadbalancing:DeregisterTargets",
-          "elasticloadbalancing:ModifyListener",
-          "elasticloadbalancing:ModifyRule"
-        ]
-        Resource = "*"
-      },
-      {
-        Effect = "Allow"
-        Action = "iam:PassRole"
-        Resource = "arn:aws:iam::607700977843:role/ecsTaskExecutionRole-tohid-task12"
-      }
-    ]
-  })
-}
