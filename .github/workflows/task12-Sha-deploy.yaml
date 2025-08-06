@@ -60,48 +60,6 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ env.AWS_REGION }}
 
-      - name: Wait for ECS service to be ready
-        run: |
-          echo "Waiting for ECS service to be ready..."
-          
-          # Wait for service to exist and be stable
-          MAX_WAIT_TIME=600  # 10 minutes
-          WAIT_TIME=0
-          SLEEP_INTERVAL=30
-          
-          while [ $WAIT_TIME -lt $MAX_WAIT_TIME ]; do
-            # Check if service exists and get its status
-            SERVICE_STATUS=$(aws ecs describe-services --cluster $ECS_CLUSTER --services $ECS_SERVICE --query 'services[0].status' --output text 2>/dev/null || echo "NOT_FOUND")
-            
-            if [ "$SERVICE_STATUS" = "NOT_FOUND" ] || [ "$SERVICE_STATUS" = "None" ]; then
-              echo "Service not found yet, waiting... (waited ${WAIT_TIME}s)"
-              sleep $SLEEP_INTERVAL
-              WAIT_TIME=$((WAIT_TIME + SLEEP_INTERVAL))
-              continue
-            fi
-            
-            # Get running and desired counts
-            RUNNING_COUNT=$(aws ecs describe-services --cluster $ECS_CLUSTER --services $ECS_SERVICE --query 'services[0].runningCount' --output text 2>/dev/null || echo "0")
-            DESIRED_COUNT=$(aws ecs describe-services --cluster $ECS_CLUSTER --services $ECS_SERVICE --query 'services[0].desiredCount' --output text 2>/dev/null || echo "0")
-            
-            echo "Service Status: $SERVICE_STATUS, Running: $RUNNING_COUNT/$DESIRED_COUNT (waited ${WAIT_TIME}s)"
-            
-            if [ "$SERVICE_STATUS" = "ACTIVE" ] && [ "$RUNNING_COUNT" -eq "$DESIRED_COUNT" ] && [ "$RUNNING_COUNT" -gt 0 ]; then
-              echo "ECS service is ready!"
-              break
-            fi
-            
-            sleep $SLEEP_INTERVAL
-            WAIT_TIME=$((WAIT_TIME + SLEEP_INTERVAL))
-          done
-          
-          if [ $WAIT_TIME -ge $MAX_WAIT_TIME ]; then
-            echo "Timeout waiting for ECS service to be ready"
-            echo "Current service status:"
-            aws ecs describe-services --cluster $ECS_CLUSTER --services $ECS_SERVICE --query 'services[0].{Status:status,RunningCount:runningCount,DesiredCount:desiredCount,PendingCount:pendingCount}' --output table
-            exit 1
-          fi
-
       - name: Update ECS Task Definition
         id: update-task-def
         run: |
