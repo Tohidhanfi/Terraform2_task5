@@ -490,6 +490,9 @@ resource "aws_iam_role_policy" "codedeploy_ecs_permissions" {
           "ecs:DescribeServices",
           "ecs:DescribeTaskDefinition",
           "ecs:UpdateService",
+          "ecs:CreateTaskSet",
+          "ecs:DeleteTaskSet",
+          "ecs:UpdateServicePrimaryTaskSet",
           "elasticloadbalancing:DescribeTargetGroups",
           "elasticloadbalancing:DescribeListeners",
           "elasticloadbalancing:DescribeRules"
