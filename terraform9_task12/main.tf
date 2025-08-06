@@ -309,7 +309,7 @@ resource "aws_codedeploy_deployment_group" "main" {
   app_name               = aws_codedeploy_app.main.name
   deployment_group_name  = "tohid-task12-deployment-group"
   deployment_config_name = "CodeDeployDefault.ECSCanary10Percent5Minutes"
-  service_role_arn       = aws_iam_role.codedeploy_service_role.arn
+  service_role_arn       = aws_iam_role.codedeploy_role.arn
 
   deployment_style {
     deployment_type = "BLUE_GREEN"
