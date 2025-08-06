@@ -1,5 +1,5 @@
-# Use official Node.js image
-FROM node:22-alpine
+# Use official Node.js image with a more stable version
+FROM node:18-alpine
 
 # Set environment variables
 ARG NODE_ENV=production
@@ -11,8 +11,8 @@ WORKDIR /app
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install --production
+# Install dependencies with better error handling
+RUN npm ci --only=production --no-audit --no-fund
 
 # Copy the rest of the application code
 COPY . .
