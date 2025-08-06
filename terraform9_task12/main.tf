@@ -495,7 +495,11 @@ resource "aws_iam_role_policy" "codedeploy_ecs_permissions" {
           "ecs:UpdateServicePrimaryTaskSet",
           "elasticloadbalancing:DescribeTargetGroups",
           "elasticloadbalancing:DescribeListeners",
-          "elasticloadbalancing:DescribeRules"
+          "elasticloadbalancing:DescribeRules",
+          "elasticloadbalancing:RegisterTargets",
+          "elasticloadbalancing:DeregisterTargets",
+          "elasticloadbalancing:ModifyListener",
+          "elasticloadbalancing:ModifyRule"
         ]
         Resource = "*"
       },
