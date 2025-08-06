@@ -498,6 +498,11 @@ resource "aws_iam_role_policy" "codedeploy_ecs_permissions" {
           "elasticloadbalancing:DescribeRules"
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = "iam:PassRole"
+        Resource = "arn:aws:iam::607700977843:role/ecsTaskExecutionRole-tohid-task12"
       }
     ]
   })
