@@ -10,6 +10,10 @@ This repository contains the following structure:
 - `terraform6_task9/` — Task 9: ECS Fargate with Spot instances
 - `terraform7_task10/` — Task 10: Host and publish Strapi project
 - `terraform8_task11/` — Task 11: Blue/Green deployment with CodeDeploy
+- `terraform9_task12/` — Task 12: GitHub Actions Workflow for ECS Deployment with CodeDeploy
+- `task13` — Task-13 Make a research document on the topic - Docker Swarm Cronjobs
+- `task14` — Task-13 Make a research document on the topic - Unleash
+
 
 ---
 
@@ -1590,8 +1594,6 @@ Add CodeDeploy deployment to your CI/CD pipeline:
 - Use CloudWatch alarms for proactive monitoring
 - Regular testing of deployment and rollback procedures is essential
 
----
-
 # TASK 12 – GitHub Actions Workflow for ECS Deployment with CodeDeploy
 
 This task implements a comprehensive GitHub Actions workflow for deploying Strapi to Amazon ECS with enhanced features including ECR image push, dynamic ECS task definition updates, AWS CodeDeploy deployment, and automatic rollback capabilities.
@@ -1868,3 +1870,11 @@ aws ecs describe-services --cluster tohid-task12-cluster --services tohid-task12
 - GitHub Actions provides complete CI/CD automation
 - CloudWatch integration enables comprehensive monitoring
 - Blue/green deployment strategy ensures zero-downtime updates
+
+
+# Task-13 Make a research document on the topic - Docker Swarm Cronjobs
+https://github.com/PearlThoughts-DevOps-Internship/Strapi--Script-Smiths/blob/tohid/task13/README.md
+
+# Task-14 Make a research document on the topic - Unleash
+https://github.com/PearlThoughts-DevOps-Internship/Strapi--Script-Smiths/blob/tohid/task14/README.md
+
